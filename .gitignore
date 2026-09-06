@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.DS_Store
+node_modules/
+dist/
+build/
+.env
+S1-AAD Sentinel-1 Amazon Airstrip Dataset/

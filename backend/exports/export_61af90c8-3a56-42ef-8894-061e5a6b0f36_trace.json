@@ -1,0 +1,19 @@
+{
+  "job_id": "61af90c8-3a56-42ef-8894-061e5a6b0f36",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T14:59:29.433245",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "MC1 Preconditions failed",
+      "details": [
+        "_ID_100.tif: File signature does not match accepted formats (PNG, JPEG, TIFF)"
+      ],
+      "timestamp": "2026-09-06T14:59:29.433278",
+      "stage": "FAILED"
+    }
+  ]
+}

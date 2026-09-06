@@ -1,0 +1,20 @@
+{
+  "job_id": "a79e9375-9b24-4b71-b7e5-3238aa4fb4a5",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T15:04:26.005311",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "MC1 Preconditions failed",
+      "details": [
+        "before_100.tif: Missing acquisition date.",
+        "after_100.tif: Missing acquisition date."
+      ],
+      "timestamp": "2026-09-06T15:04:26.009721",
+      "stage": "FAILED"
+    }
+  ]
+}

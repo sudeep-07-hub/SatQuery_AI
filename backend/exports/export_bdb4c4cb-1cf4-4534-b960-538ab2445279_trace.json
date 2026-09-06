@@ -1,0 +1,43 @@
+{
+  "job_id": "bdb4c4cb-1cf4-4534-b960-538ab2445279",
+  "status": "ABSTAIN",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T15:25:00.607324",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-06T15:25:00.608317",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "optical"
+        ],
+        "temporal_requirement": "",
+        "query": "Find the building"
+      },
+      "timestamp": "2026-09-06T15:25:00.608322",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Planning failed: No tool found for temporal_requirement='', primary_task='single_image_vqa'",
+      "reason": "No tool found for temporal_requirement='', primary_task='single_image_vqa'",
+      "failed": null,
+      "timestamp": "2026-09-06T15:25:00.608328",
+      "stage": "ABSTAIN"
+    }
+  ]
+}

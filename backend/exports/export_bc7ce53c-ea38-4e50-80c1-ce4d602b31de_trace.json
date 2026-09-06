@@ -1,0 +1,22 @@
+{
+  "job_id": "bc7ce53c-ea38-4e50-80c1-ce4d602b31de",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T14:58:35.354511",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "MC1 Preconditions failed",
+      "details": [
+        "_ID_100.tif: File signature does not match accepted formats (PNG, JPEG, TIFF)",
+        "_ID_104.tif: File signature does not match accepted formats (PNG, JPEG, TIFF)",
+        "One or both images missing CRS.",
+        "Could not compute spatial overlap/co-registration due to missing CRS or footprints."
+      ],
+      "timestamp": "2026-09-06T14:58:35.354557",
+      "stage": "FAILED"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "job_id": "1ba19cd4-c8fc-4bbc-8926-4ff9dc2d5424",
+  "status": "DONE",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T15:22:38.324965",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-06T15:22:38.327152",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "change_detection",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "optical"
+        ],
+        "temporal_requirement": "bi_temporal_change",
+        "query": "smoke_test: did it change?"
+      },
+      "timestamp": "2026-09-06T15:22:38.327160",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['CHANGE_MAMBA']",
+      "timestamp": "2026-09-06T15:22:38.327175",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Normalizing evidence",
+      "timestamp": "2026-09-06T15:22:38.579804",
+      "stage": "MC5_NORMALIZING"
+    },
+    {
+      "message": "Verifying evidence",
+      "timestamp": "2026-09-06T15:22:38.579817",
+      "stage": "MC6_VERIFYING"
+    },
+    {
+      "message": "Generating final answer",
+      "timestamp": "2026-09-06T15:22:38.579824",
+      "stage": "MC7_ANSWERING"
+    },
+    {
+      "message": "Pipeline complete",
+      "timestamp": "2026-09-06T15:22:38.579827",
+      "stage": "DONE"
+    }
+  ]
+}

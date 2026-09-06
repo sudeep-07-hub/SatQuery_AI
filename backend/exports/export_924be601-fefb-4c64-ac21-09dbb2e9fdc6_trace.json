@@ -1,0 +1,49 @@
+{
+  "job_id": "924be601-fefb-4c64-ac21-09dbb2e9fdc6",
+  "status": "PRECONDITION_FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T15:07:06.212109",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-06T15:07:06.217091",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "change_detection",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "bi_temporal_change",
+        "query": "Has built-up area increased?"
+      },
+      "timestamp": "2026-09-06T15:07:06.217100",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Planning failed: no registered tool accepts sar+sar for change detection",
+      "reason": "no registered tool accepts sar+sar for change detection",
+      "failed": [
+        {
+          "check": "supported_modalities",
+          "reason": "No registered tool accepts sar+sar for change detection",
+          "actual": "sar"
+        }
+      ],
+      "timestamp": "2026-09-06T15:07:06.217108",
+      "stage": "PRECONDITION_FAILED"
+    }
+  ]
+}

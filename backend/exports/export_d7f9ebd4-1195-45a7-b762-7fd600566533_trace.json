@@ -1,0 +1,43 @@
+{
+  "job_id": "d7f9ebd4-1195-45a7-b762-7fd600566533",
+  "status": "ABSTAIN",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T15:07:06.202501",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-06T15:07:06.203630",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "",
+        "query": "What is in this image?"
+      },
+      "timestamp": "2026-09-06T15:07:06.203636",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Planning failed: No tool found for temporal_requirement='', primary_task='single_image_vqa'",
+      "reason": "No tool found for temporal_requirement='', primary_task='single_image_vqa'",
+      "failed": null,
+      "timestamp": "2026-09-06T15:07:06.203642",
+      "stage": "ABSTAIN"
+    }
+  ]
+}

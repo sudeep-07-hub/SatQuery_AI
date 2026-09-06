@@ -1,0 +1,19 @@
+{
+  "job_id": "dcf6ce17-6ab7-4437-b5fb-f806a41f282e",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-06T15:24:21.972129",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "MC1 Preconditions failed",
+      "details": [
+        "test.txt: Unsupported extension: .txt"
+      ],
+      "timestamp": "2026-09-06T15:24:21.972158",
+      "stage": "FAILED"
+    }
+  ]
+}
