@@ -9,15 +9,20 @@ from typing import Dict, Optional, List
 import io
 import torch
 import traceback
+import logging
 
 from mc1.pipeline import run_mc1_pipeline
 from mc3_planner.tool_registry import ToolRegistry
+from mc4b_temporal.tool_adapter import CHANGE_MAMBA_TOOL
+from mc4a_vqa.tool_entry import PALIGEMMA_VQA_TOOL
 from mc3_planner.workflow_planner import build_workflow_plan
 from mc3_planner.dispatcher import execute_plan
-from mc4b_temporal.tool_adapter import CHANGE_MAMBA_TOOL
 from mc5_evidence.evidence_graph import EvidenceGraph
 from mc6_verification.verifier import Verifier
 from mc6_verification.conflict_detector import detect_conflicts
+from mc8_export.exporter import generate_exports
+
+logger = logging.getLogger(__name__)
 
 # Fake image tensors for backend processing
 def load_tensors(image_bytes_list: List[bytes]):
@@ -158,7 +163,8 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         # MC4: Executing
         job_registry.update_status(job_id, "MC4_EXECUTING", {"message": f"Executing tools: {plan.get('execution_order')}"})
         tensors = load_tensors([b for f, b in files_data])
-        exec_result = execute_plan(plan, mc1_profile, tensors, query, seed=42)
+        # Run blocking execution in thread pool
+        exec_result = await asyncio.to_thread(execute_plan, plan, mc1_profile, tensors, query, 42)
         
         if exec_result.get("status") == "PRECONDITION_FAILED":
             job_registry.update_status(job_id, "PRECONDITION_FAILED", {
@@ -189,6 +195,11 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         verifier = Verifier()
         verification = verifier.verify(evidence, mc1_profile)
         
+        # Determine if single source
+        source_models = set(ev.get("source_model") for ev in evidence)
+        if len(source_models) == 1 and verification["status"] == "VERIFIED":
+            verification["status"] = "SINGLE_SOURCE_UNVERIFIED"
+            
         if verification["status"] == "RE_PLAN_REQUIRED":
             job_registry.update_status(job_id, "MC6_REPLANNING", {"message": "Re-plan triggered by verifier", "triggers": verification["triggers_fired"]})
             # In a real system, we'd loop back to MC3. For now, simulate reaching max replans or falling back.
@@ -211,14 +222,28 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         # Extract raw tool outputs if available (e.g. for heatmap / statistics)
         raw_outputs = exec_result.get("tool_outputs", {})
         cmamba_out = raw_outputs.get("CHANGE_MAMBA", {})
+        paligemma_out = raw_outputs.get("PALIGEMMA_VQA", {})
         
+        caveats = []
+        if verification["status"] == "SINGLE_SOURCE_UNVERIFIED":
+            caveats.append("Single-source unverified evidence.")
+        if paligemma_out.get("domain_mismatch_flag"):
+            caveats.append("Domain mismatch flag set for non-optical input.")
+            
         claims = [ev["claim"] for ev in evidence]
+        
+        # Base answer from claims, fallback to just combining them
+        if "PALIGEMMA_VQA" in raw_outputs:
+            final_ans = paligemma_out.get("textual_answer") or paligemma_out.get("caption") or "No answer provided."
+        else:
+            final_ans = " Based on the evidence, ".join(claims) if claims else "No change detected."
+            
         final_answer = {
-            "final_answer": " Based on the evidence, ".join(claims) if claims else "No change detected.",
+            "final_answer": final_ans,
             "claims": claims,
             "evidence_references": [ev["evidence_id"] for ev in evidence],
             "confidence": max([ev["confidence"] for ev in evidence]) if evidence else 0.0,
-            "caveats": [],
+            "caveats": caveats,
             "change_statistics": cmamba_out.get("change_statistics"),
             "change_map": cmamba_out.get("change_map")
         }

@@ -57,7 +57,17 @@ def build_workflow_plan(
 
         # Check image count
         required_count = constraints.get("image_count")
-        if required_count and mc1_profile.get("image_count") != required_count:
+        
+        # If image_count is 1 but we have 2 images, check if we can resolve the target image
+        if required_count == 1 and mc1_profile.get("image_count") == 2:
+            # Heuristic scan for ordinal cues
+            query = task_spec.get("query", "").lower()
+            ordinal_cues = ["first", "second", "image 1", "image 2", "optical one"]
+            if any(cue in query for cue in ordinal_cues):
+                pass # Can resolve, let it pass
+            else:
+                pass # Ambiguous, but we let it pass and set ambiguity_flag later
+        elif required_count and mc1_profile.get("image_count") != required_count:
             continue
 
         # Check modality support
@@ -114,25 +124,47 @@ def build_workflow_plan(
 
     # 5. Build the Executable Workflow Plan
     tool_name = selected["name"]
-    plan = {
-        "status": "PLAN_READY",
-        "selected_tools": [tool_name],
-        "execution_order": [tool_name],
-        "tool_parameters": {
-            tool_name: {
-                "sub_task": sub_task,
-                "query": task_spec.get("query", ""),
-                "target_entities": task_spec.get("target_entities", []),
+    
+    if tool_name == "PALIGEMMA_VQA":
+        plan = {
+            "status": "PLAN_READY",
+            "selected_tools": [tool_name],
+            "execution_order": [tool_name],
+            "tool_parameters": {
+                tool_name: {
+                    "query": task_spec.get("query", ""),
+                    "target_entities": task_spec.get("target_entities", []),
+                },
             },
-        },
-        "expected_outputs": [
-            "change_mask",
-            "change_regions",
-            "change_statistics",
-        ],
-        "verification_requirements": [
-            "cross_modal_corroboration_if_conflict",
-        ],
-    }
+            "expected_outputs": [
+                "textual_answer",
+                "model_confidences",
+                "spatial_evidence",
+            ],
+            "verification_requirements": [
+                "cross_modal_corroboration_if_conflict",
+            ],
+        }
+    else:
+        plan = {
+            "status": "PLAN_READY",
+            "selected_tools": [tool_name],
+            "execution_order": [tool_name],
+            "tool_parameters": {
+                tool_name: {
+                    "sub_task": sub_task,
+                    "query": task_spec.get("query", ""),
+                    "target_entities": task_spec.get("target_entities", []),
+                },
+            },
+            "expected_outputs": [
+                "change_mask",
+                "change_regions",
+                "change_statistics",
+            ],
+            "verification_requirements": [
+                "cross_modal_corroboration_if_conflict",
+            ],
+        }
 
     return plan

@@ -181,6 +181,7 @@ export default function App() {
                   result={result} 
                   evidenceGraph={evidenceGraph} 
                   files={files} 
+                  jobId={jobId}
                 />
               ) : null}
             </div>

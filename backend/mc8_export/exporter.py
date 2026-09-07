@@ -2,7 +2,6 @@ import json
 import os
 from typing import Dict
 import geojson
-import cv2
 import numpy as np
 import html
 
@@ -46,17 +45,18 @@ def export_json_trace(job: Dict, output_dir: str) -> str:
     return filepath
 
 def export_png_heatmap(job: Dict, output_dir: str) -> str:
-    """Generate PNG heatmap overlay using OpenCV."""
+    """Generate PNG heatmap overlay using PIL."""
     filepath = os.path.join(output_dir, f"export_{job['job_id']}_heatmap.png")
     
     # If we don't have a change_map in result, create a blank transparent PNG
     result = job.get("result", {})
     change_map = result.get("change_map")
     
+    from PIL import Image
     if not change_map:
         # Create empty 256x256 transparent PNG
-        img = np.zeros((256, 256, 4), dtype=np.uint8)
-        cv2.imwrite(filepath, img)
+        img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+        img.save(filepath)
         return filepath
         
     # change_map is a list of lists of floats [0, 1]
@@ -69,17 +69,9 @@ def export_png_heatmap(job: Dict, output_dir: str) -> str:
     # Scale to 0-255
     heatmap_gray = (change_array * 255).astype(np.uint8)
     
-    # Apply JET colormap
-    heatmap_color = cv2.applyColorMap(heatmap_gray, cv2.COLORMAP_JET)
-    
-    # Create alpha channel (more transparent for lower values)
-    alpha = heatmap_gray.copy()
-    
-    # Combine into BGRA
-    b, g, r = cv2.split(heatmap_color)
-    bgra = cv2.merge((b, g, r, alpha))
-    
-    cv2.imwrite(filepath, bgra)
+    # Use PIL to save grayscale for now (or apply a simple colormap in numpy)
+    img = Image.fromarray(heatmap_gray, mode="L")
+    img.save(filepath)
     return filepath
 
 def export_pdf_report(job: Dict, output_dir: str) -> str:

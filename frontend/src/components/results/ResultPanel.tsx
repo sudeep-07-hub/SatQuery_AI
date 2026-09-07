@@ -6,9 +6,10 @@ interface ResultPanelProps {
   result: any;
   evidenceGraph: any;
   files: any[];
+  jobId: string;
 }
 
-export default function ResultPanel({ status, result, evidenceGraph, files }: ResultPanelProps) {
+export default function ResultPanel({ status, result, evidenceGraph, files, jobId }: ResultPanelProps) {
   if (["FAILED", "ABSTAIN", "INSUFFICIENT_EVIDENCE", "PRECONDITION_FAILED"].includes(status)) {
     let title = "Analysis Terminated";
     let desc = "The agentic controller determined that this request could not be confidently completed.";
@@ -57,19 +58,39 @@ export default function ResultPanel({ status, result, evidenceGraph, files }: Re
       confColor = '#eab308'; // yellow
     }
 
+    const hasNonLocalized = result.caveats && result.caveats.includes("Single-source unverified evidence.");
+
     return (
       <div className="result-panel">
         <div className="result-header">
           <h2>Analysis Result</h2>
-          <div className="confidence-badge" style={{ borderColor: confColor, color: confColor }}>
-            <span className="conf-label">{confLabel} Confidence</span>
-            <span className="conf-value">{(confidence * 100).toFixed(1)}%</span>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {hasNonLocalized && (
+              <div className="badge" style={{ padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', background: '#f3f4f6', color: '#4b5563', border: '1px solid #d1d5db' }}>
+                Non-localized Evidence
+              </div>
+            )}
+            <div className="confidence-badge" style={{ borderColor: confColor, color: confColor }}>
+              <span className="conf-label">{confLabel} Confidence</span>
+              <span className="conf-value">{(confidence * 100).toFixed(1)}%</span>
+            </div>
           </div>
         </div>
         
         <div className="final-answer" style={{ fontSize: '16px', fontWeight: 'bold', margin: '15px 0' }}>
           {result.final_answer}
         </div>
+        
+        {result.caveats && result.caveats.length > 0 && (
+          <div className="caveats-section" style={{ marginBottom: '15px', padding: '10px', background: '#fffbeb', borderLeft: '4px solid #f59e0b' }}>
+            <strong style={{ fontSize: '14px', color: '#92400e' }}>Caveats:</strong>
+            <ul style={{ margin: '5px 0 0 20px', fontSize: '13px', color: '#92400e' }}>
+              {result.caveats.map((c: string, idx: number) => (
+                <li key={idx}>{c}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         
         <div className="claims-section" style={{ marginBottom: '20px' }}>
           <h3 style={{ fontSize: '14px', marginBottom: '8px', color: '#4b5563' }}>Evidence Claims</h3>
@@ -80,9 +101,11 @@ export default function ResultPanel({ status, result, evidenceGraph, files }: Re
           </ul>
         </div>
         
-        <div className="map-container-wrapper" style={{ marginTop: '20px' }}>
-          <BeforeAfterViewer evidenceGraph={evidenceGraph} files={files} jobId={jobId} />
-        </div>
+        {!hasNonLocalized && (
+          <div className="map-container-wrapper" style={{ marginTop: '20px' }}>
+            <BeforeAfterViewer evidenceGraph={evidenceGraph} files={files} jobId={jobId} />
+          </div>
+        )}
         
         <div className="exports-section" style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #e5e7eb' }}>
           <h3 style={{ fontSize: '14px', marginBottom: '10px', color: '#4b5563' }}>Export Artifacts</h3>
