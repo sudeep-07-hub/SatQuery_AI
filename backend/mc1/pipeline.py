@@ -94,6 +94,9 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
             coreg = calculate_coregistration(footprints[0], footprints[1])
             profile["spatial_overlap"] = round(overlap, 2) if overlap is not None else None
             profile["coregistration_score"] = coreg
+            
+            if profile["spatial_overlap"] is not None and profile["spatial_overlap"] <= 0.0:
+                warnings.append("Images have no spatial overlap. Cannot process as a pair.")
         else:
             warnings.append("Could not compute spatial overlap/co-registration due to missing CRS or footprints.")
             
