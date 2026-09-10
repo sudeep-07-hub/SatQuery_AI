@@ -8,3 +8,5 @@ dist/
 build/
 .env
 S1-AAD Sentinel-1 Amazon Airstrip Dataset/
+backend/mc4c/weights/
+backend/mc4c/weights/
