@@ -22,6 +22,13 @@ export default function App() {
   const [result, setResult] = useState<any>(null);
   const [evidenceGraph, setEvidenceGraph] = useState<any>(null);
 
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   const canAnalyze = files.length > 0 && query.trim().length > 0;
 
   useEffect(() => {
@@ -135,7 +142,20 @@ export default function App() {
             </div>
           </div>
         </div>
-        <span className="app-header__version">v0.1.0</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span className="app-header__version">v0.1.0</span>
+          <button 
+            onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+            style={{
+              background: 'none', border: '1px solid var(--border)', 
+              borderRadius: 'var(--radius-base)', padding: '4px 8px', 
+              cursor: 'pointer', color: 'var(--text-primary)', 
+              fontFamily: 'var(--font-sans)', fontSize: '13px'
+            }}
+          >
+            {theme === 'light' ? '🌙 Dark' : '☀ Light'}
+          </button>
+        </div>
       </header>
 
       <main className="app-main">

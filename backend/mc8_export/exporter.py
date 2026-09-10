@@ -17,7 +17,7 @@ def export_geojson(job: Dict, output_dir: str) -> str:
     if eg and "nodes" in eg:
         for node in eg["nodes"]:
             if node.get("type") == "evidence":
-                region = node.get("attributes", {}).get("spatial_region")
+                region = node.get("data", {}).get("spatial_region")
                 if region:
                     features.append(region)
                     

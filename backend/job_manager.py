@@ -63,6 +63,7 @@ class JobRegistry:
 job_registry = JobRegistry()
 _tool_registry = ToolRegistry()
 _tool_registry.register(CHANGE_MAMBA_TOOL)
+_tool_registry.register(PALIGEMMA_VQA_TOOL)
 
 async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: str):
     """
@@ -203,7 +204,11 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         if verification["status"] == "RE_PLAN_REQUIRED":
             job_registry.update_status(job_id, "MC6_REPLANNING", {"message": "Re-plan triggered by verifier", "triggers": verification["triggers_fired"]})
             # In a real system, we'd loop back to MC3. For now, simulate reaching max replans or falling back.
-            verification = verifier.verify(evidence, mc1_profile) # Call again to hit max attempts if max=1
+            verification = verifier.verify(evidence, mc1_profile) # Call again
+            
+            # Since we don't have a real replanner loop in this demo, if it still fails, force abort
+            if verification["status"] == "RE_PLAN_REQUIRED":
+                verification["status"] = "INSUFFICIENT_EVIDENCE"
             
         if verification["status"] == "INSUFFICIENT_EVIDENCE":
             job_registry.update_status(job_id, "INSUFFICIENT_EVIDENCE", {

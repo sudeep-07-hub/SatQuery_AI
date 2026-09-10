@@ -1,0 +1,74 @@
+{
+  "job_id": "7b7a2635-32f3-4eb0-bb26-6e5c9bced65b",
+  "status": "DONE",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-10T16:50:22.604267",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-10T16:50:22.645728",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "",
+        "query": "Describe the terrain in this scene."
+      },
+      "timestamp": "2026-09-10T16:50:22.645749",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['PALIGEMMA_VQA']",
+      "timestamp": "2026-09-10T16:50:22.645775",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Normalizing evidence",
+      "timestamp": "2026-09-10T16:50:22.651320",
+      "stage": "MC5_NORMALIZING"
+    },
+    {
+      "message": "Verifying evidence",
+      "timestamp": "2026-09-10T16:50:22.651371",
+      "stage": "MC6_VERIFYING"
+    },
+    {
+      "message": "Re-plan triggered by verifier",
+      "triggers": [
+        {
+          "trigger": "low_confidence",
+          "evidence_id": "1dd9fadd-bbf5-406c-afb1-25a9484085ef",
+          "confidence": 0.285,
+          "threshold": 0.4
+        }
+      ],
+      "timestamp": "2026-09-10T16:50:22.651408",
+      "stage": "MC6_REPLANNING"
+    },
+    {
+      "message": "Generating final answer",
+      "timestamp": "2026-09-10T16:50:22.651420",
+      "stage": "MC7_ANSWERING"
+    },
+    {
+      "message": "Pipeline complete",
+      "timestamp": "2026-09-10T16:50:22.651477",
+      "stage": "DONE"
+    }
+  ]
+}

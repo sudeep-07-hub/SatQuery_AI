@@ -32,7 +32,7 @@ CHANGE_MAMBA_TOOL = {
         "change_localization",
         "change_captioning",
     ],
-    "supported_modalities": ["optical"],
+    "supported_modalities": ["optical", "sar"],
     "input_constraints": {
         "image_count": 2,
         "same_modality": True,

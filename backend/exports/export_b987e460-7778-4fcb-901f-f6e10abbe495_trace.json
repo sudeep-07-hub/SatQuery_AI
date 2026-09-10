@@ -1,0 +1,77 @@
+{
+  "job_id": "b987e460-7778-4fcb-901f-f6e10abbe495",
+  "status": "INSUFFICIENT_EVIDENCE",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-10T16:59:31.467023",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-10T16:59:31.506845",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "",
+        "query": "Describe the terrain in this scene"
+      },
+      "timestamp": "2026-09-10T16:59:31.506865",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['PALIGEMMA_VQA']",
+      "timestamp": "2026-09-10T16:59:31.507195",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Normalizing evidence",
+      "timestamp": "2026-09-10T16:59:31.553741",
+      "stage": "MC5_NORMALIZING"
+    },
+    {
+      "message": "Verifying evidence",
+      "timestamp": "2026-09-10T16:59:31.553827",
+      "stage": "MC6_VERIFYING"
+    },
+    {
+      "message": "Re-plan triggered by verifier",
+      "triggers": [
+        {
+          "trigger": "low_confidence",
+          "evidence_id": "c55a8bc6-9eb8-48bb-8d22-fe40511e25f6",
+          "confidence": 0.285,
+          "threshold": 0.4
+        }
+      ],
+      "timestamp": "2026-09-10T16:59:31.553899",
+      "stage": "MC6_REPLANNING"
+    },
+    {
+      "message": "Verification failed, insufficient evidence",
+      "triggers": [
+        {
+          "trigger": "low_confidence",
+          "evidence_id": "c55a8bc6-9eb8-48bb-8d22-fe40511e25f6",
+          "confidence": 0.285,
+          "threshold": 0.4
+        }
+      ],
+      "timestamp": "2026-09-10T16:59:31.553911",
+      "stage": "INSUFFICIENT_EVIDENCE"
+    }
+  ]
+}

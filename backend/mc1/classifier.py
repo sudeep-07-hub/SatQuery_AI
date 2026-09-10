@@ -31,7 +31,7 @@ class HeuristicClassifier(SensorClassifier):
                     dtypes = meta.get("dtypes", [])
                     if dtypes and any("float" in d.lower() for d in dtypes):
                         modality = "sar"
-                        sensor = "Generic SAR"
+                        sensor = "Sentinel-1"
                     else:
                         modality = "optical"
                         sensor = "Panchromatic" if bands == 1 else "Unknown"

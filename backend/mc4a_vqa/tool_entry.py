@@ -11,7 +11,7 @@ PALIGEMMA_VQA_TOOL = {
         "counting",
         "single_image_vqa"
     ],
-    "supported_modalities": ["optical"], # SAR permitted but flagged with domain mismatch
+    "supported_modalities": ["optical", "sar"], # SAR permitted but flagged with domain mismatch
     "input_constraints": {
         "image_count": 1,
         "quality": {"optical": 0.5} # Minimum quality score

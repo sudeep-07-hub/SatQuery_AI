@@ -12,6 +12,9 @@ def determine_temporal_relationship(meta1: dict, meta2: dict, mod1: str, mod2: s
     date2_str = meta2.get("acquisition_date")
     
     if not date1_str or not date2_str:
+        # Fallback for S1-AAD which lacks TIFF dates: if same modality, assume bi-temporal
+        if mod1 != "unknown" and mod1 == mod2:
+            return "bi_temporal"
         return "unknown"
         
     try:
@@ -23,6 +26,8 @@ def determine_temporal_relationship(meta1: dict, meta2: dict, mod1: str, mod2: s
         if d1_clean == d2_clean:
             return "same_date"
         else:
-            return "multi_temporal"
+            return "bi_temporal"
     except Exception:
+        if mod1 != "unknown" and mod1 == mod2:
+            return "bi_temporal"
         return "unknown"

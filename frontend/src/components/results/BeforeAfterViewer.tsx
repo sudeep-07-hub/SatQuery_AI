@@ -17,8 +17,8 @@ export default function BeforeAfterViewer({ evidenceGraph, files, jobId }: Befor
   const features = [];
   if (evidenceGraph && evidenceGraph.nodes) {
     for (const node of evidenceGraph.nodes) {
-      if (node.type === 'evidence' && node.attributes.spatial_region) {
-        features.push(node.attributes.spatial_region);
+      if (node.type === 'evidence' && node.data?.spatial_region) {
+        features.push(node.data.spatial_region);
       }
     }
   }

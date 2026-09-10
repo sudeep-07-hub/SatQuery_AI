@@ -1,0 +1,48 @@
+{
+  "job_id": "f8272803-5d0f-4de9-ac4d-c273a6495c8d",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-10T16:24:50.968577",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-10T16:24:51.010262",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "",
+        "query": "Describe the terrain in this scene."
+      },
+      "timestamp": "2026-09-10T16:24:51.010286",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['PALIGEMMA_VQA']",
+      "timestamp": "2026-09-10T16:24:51.010445",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Internal error",
+      "error": "No module named 'torchvision'",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/sukesh/Desktop/satquery/backend/job_manager.py\", line 168, in execute_agentic_pipeline\n    exec_result = await asyncio.to_thread(execute_plan, plan, mc1_profile, tensors, query, 42)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/threads.py\", line 26, in to_thread\n    return await loop.run_in_executor(None, func_call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/thread.py\", line 86, in run\n    result = ctx.run(self.task)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/thread.py\", line 73, in run\n    return fn(*args, **kwargs)\n  File \"/Users/sukesh/Desktop/satquery/backend/mc3_planner/dispatcher.py\", line 86, in execute_plan\n    from torchvision.transforms.functional import to_pil_image\nModuleNotFoundError: No module named 'torchvision'\n",
+      "timestamp": "2026-09-10T16:24:51.022388",
+      "stage": "FAILED"
+    }
+  ]
+}

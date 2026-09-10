@@ -1,0 +1,22 @@
+{
+  "job_id": "e150d8f7-6e8d-4a12-b4ea-f8e9fe999e60",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-10T16:18:39.201623",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "MC1 Preconditions failed",
+      "details": [
+        "_ID_99.tif: Missing acquisition date.",
+        "_ID_108.tif: Missing acquisition date.",
+        "CRS mismatch: EPSG:32721 vs EPSG:32722.",
+        "Could not compute spatial overlap/co-registration due to missing CRS or footprints."
+      ],
+      "timestamp": "2026-09-10T16:18:39.206253",
+      "stage": "FAILED"
+    }
+  ]
+}

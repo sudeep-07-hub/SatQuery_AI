@@ -71,10 +71,14 @@ def execute_plan(
         if tool_name == "PALIGEMMA_VQA":
             # Determine target image
             target_image_key = "image_1"
+            guessed_target = False
+            
             if mc1_profile.get("image_count") == 2 and "ambiguity_flag" not in mc1_profile:
                 query = params.get("query", "").lower()
                 if "second" in query or "image 2" in query:
                     target_image_key = "image_2"
+                elif "first" not in query and "image 1" not in query:
+                    guessed_target = True
             
             target_tensor = t1 if target_image_key == "image_1" else t2
             if target_tensor is None:
@@ -83,8 +87,31 @@ def execute_plan(
                     "reason": f"Missing image tensor for {tool_name}",
                 }
                 
-            from torchvision.transforms.functional import to_pil_image
-            pil_image = to_pil_image(target_tensor)
+            # Convert (C, H, W) or (B, C, H, W) tensor to PIL Image without torchvision
+            import numpy as np
+            from PIL import Image
+            
+            # Ensure it's on CPU, detach, and convert to numpy
+            arr = target_tensor.cpu().detach().numpy()
+            
+            # Remove batch dimension if present
+            if arr.ndim == 4 and arr.shape[0] == 1:
+                arr = arr[0]
+            
+            if arr.ndim == 3:
+                if arr.shape[0] in [1, 3]:
+                    # Convert (C, H, W) to (H, W, C)
+                    arr = np.transpose(arr, (1, 2, 0))
+                # Handle single band
+                if arr.shape[2] == 1:
+                    arr = arr[:, :, 0]
+                    
+            # Normalize to 0-255 uint8 if it's float
+            if arr.dtype.kind == 'f':
+                # Assuming typical 0-1 range if float, or fallback to min/max scaling
+                arr = (np.clip(arr, 0, 1) * 255).astype(np.uint8)
+                
+            pil_image = Image.fromarray(arr)
             
             # Execute VQA
             result = adapter.run(
@@ -100,6 +127,9 @@ def execute_plan(
                     "tool": tool_name,
                     "failed": [{"check": "quality_gate", "reason": result["blocked_reason"]}],
                 }
+                
+            if guessed_target:
+                result["warnings"] = ["Ambiguous query against multi-image input. Defaulted to evaluating image_1."]
                 
             tool_outputs[tool_name] = result
             

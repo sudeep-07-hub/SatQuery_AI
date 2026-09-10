@@ -1,0 +1,48 @@
+{
+  "job_id": "e0800890-21bb-46bc-96f1-1863c20a5040",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-10T16:48:04.653940",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-10T16:48:04.693677",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "",
+        "query": "Describe the terrain in this scene."
+      },
+      "timestamp": "2026-09-10T16:48:04.693697",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['PALIGEMMA_VQA']",
+      "timestamp": "2026-09-10T16:48:04.693761",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Internal error",
+      "error": "Cannot handle this data type: (1, 1, 256, 256), |u1",
+      "traceback": "Traceback (most recent call last):\n  File \"/opt/homebrew/lib/python3.14/site-packages/PIL/Image.py\", line 3431, in fromarray\n    typemode, rawmode, color_modes = _fromarray_typemap[typekey]\n                                     ~~~~~~~~~~~~~~~~~~^^^^^^^^^\nKeyError: ((1, 1, 256, 256), '|u1')\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Users/sukesh/Desktop/satquery/backend/job_manager.py\", line 168, in execute_agentic_pipeline\n    exec_result = await asyncio.to_thread(execute_plan, plan, mc1_profile, tensors, query, 42)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/threads.py\", line 26, in to_thread\n    return await loop.run_in_executor(None, func_call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/thread.py\", line 86, in run\n    result = ctx.run(self.task)\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/thread.py\", line 73, in run\n    return fn(*args, **kwargs)\n  File \"/Users/sukesh/Desktop/satquery/backend/mc3_planner/dispatcher.py\", line 110, in execute_plan\n    pil_image = Image.fromarray(arr)\n  File \"/opt/homebrew/lib/python3.14/site-packages/PIL/Image.py\", line 3435, in fromarray\n    raise TypeError(msg) from e\nTypeError: Cannot handle this data type: (1, 1, 256, 256), |u1\n",
+      "timestamp": "2026-09-10T16:48:04.702167",
+      "stage": "FAILED"
+    }
+  ]
+}
