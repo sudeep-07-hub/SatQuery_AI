@@ -124,6 +124,7 @@ def build_workflow_plan(
 
     # 5. Build the Executable Workflow Plan
     tool_name = selected["name"]
+    resolved_modality = mc1_profile.get("image_1", {}).get("modality", "optical")
     
     if tool_name == "PALIGEMMA_VQA":
         plan = {
@@ -134,6 +135,7 @@ def build_workflow_plan(
                 tool_name: {
                     "query": task_spec.get("query", ""),
                     "target_entities": task_spec.get("target_entities", []),
+                    "resolved_modality": resolved_modality,
                 },
             },
             "expected_outputs": [
@@ -155,6 +157,7 @@ def build_workflow_plan(
                     "sub_task": sub_task,
                     "query": task_spec.get("query", ""),
                     "target_entities": task_spec.get("target_entities", []),
+                    "resolved_modality": resolved_modality,
                 },
             },
             "expected_outputs": [

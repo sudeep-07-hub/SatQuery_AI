@@ -84,6 +84,19 @@ def get_job_evidence_graph(job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
     return {"job_id": job_id, "evidence_graph": job.get("evidence_graph")}
 
+@app.get("/api/jobs/{job_id}/structured_trace")
+def get_job_structured_trace(job_id: str):
+    job = job_registry.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {
+        "job_id": job_id, 
+        "structured_trace": {
+            "evidence_objects": job.get("evidence_objects", []),
+            "evidence_graph": job.get("evidence_graph", {})
+        }
+    }
+
 @app.get("/api/jobs/{job_id}/export/{format}")
 def export_job_result(job_id: str, format: str):
     job = job_registry.get_job(job_id)

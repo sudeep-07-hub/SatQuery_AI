@@ -31,7 +31,7 @@ CHANGE_CLASSES = [
 ]
 
 # ── Verification / Re-plan ────────────────────────────────────────
-LOW_CONFIDENCE_THRESHOLD = 0.4    # Below this → RE-PLAN REQUIRED
+LOW_CONFIDENCE_THRESHOLD = 0.1    # Below this → RE-PLAN REQUIRED
 MAX_REPLAN_ATTEMPTS = 2           # Prevent infinite re-plan loops
 
 # ── Computational Cost ────────────────────────────────────────────

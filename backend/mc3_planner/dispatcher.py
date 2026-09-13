@@ -35,6 +35,7 @@ def execute_plan(
     image_tensors: Dict[str, torch.Tensor],
     query: str,
     seed: Optional[int] = None,
+    job_id: str = "test_job",
 ) -> Dict:
     """
     Execute a Workflow Plan.
@@ -45,6 +46,7 @@ def execute_plan(
         image_tensors: {"t1": tensor, "t2": tensor}
         query: Original user query.
         seed: Optional seed for reproducibility.
+        job_id: Job ID for generating stable evidence IDs.
 
     Returns:
         dict with:
@@ -134,7 +136,7 @@ def execute_plan(
             tool_outputs[tool_name] = result
             
             # Normalize to Evidence Objects (MC5.1)
-            evidence = to_evidence_object(result, mc1_profile, params)
+            evidence = to_evidence_object(result, mc1_profile, params, job_id)
             evidence_objects.extend(evidence)
             
         elif tool_name == "CHANGE_MAMBA":
@@ -143,6 +145,17 @@ def execute_plan(
                     "status": "TOOL_FAILED",
                     "reason": f"Missing image tensors for {tool_name}",
                 }
+
+            # Modality mismatch assertion (defense in depth)
+            resolved_modality = params.get("resolved_modality")
+            if mc1_profile.get("image_count") == 2:
+                actual_mod1 = mc1_profile.get("image_1", {}).get("modality")
+                actual_mod2 = mc1_profile.get("image_2", {}).get("modality")
+                if resolved_modality and (actual_mod1 != resolved_modality or actual_mod2 != resolved_modality):
+                    raise RuntimeError(
+                        f"Modality mismatch assertion failed. Expected {resolved_modality} "
+                        f"but got {actual_mod1} and {actual_mod2}."
+                    )
 
             # Execute the tool
             result = adapter.execute(mc1_profile, t1, t2, query=query, seed=seed)
@@ -157,7 +170,7 @@ def execute_plan(
             tool_outputs[tool_name] = result
 
             # Normalize to Evidence Objects (MC5.1)
-            evidence = normalize_to_evidence(result, mc1_profile, query)
+            evidence = normalize_to_evidence(result, mc1_profile, query, job_id)
             evidence_objects.extend(evidence)
 
     return {

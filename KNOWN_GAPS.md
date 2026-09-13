@@ -12,3 +12,9 @@
 - **Impact**: The system cannot dynamically extract novel entities (e.g., "airstrip", "deforestation") from natural language, relying instead on generic tool capabilities.
 - **Required Fix**: Replace the heuristic `job_manager.py` task parser with a real LLM-based entity extraction and decomposition prompt (the true intended MC2 architecture).
 - **Current Status**: Documented as a known gap for the Phase 1 build scope.
+
+## 3. Omitted Evidence Graph Edges (MC5)
+- **Symptom**: The MC5.2 Spatial Evidence Graph explicitly omits the `contradicts`, `corroborates`, and `precedes` edge types described in the architecture.
+- **Impact**: Complex multi-model verification (MC6) cannot currently rely on the graph to automatically flag topological contradictions or temporal precedence.
+- **Required Fix**: Implement a graph reasoning pass after normalization to compute temporal and logical relationships between claims.
+- **Current Status**: Documented as an accepted gap for Phase 1. Only `supports`, `derived_from`, and `overlaps` are implemented.

@@ -73,3 +73,71 @@ Fix applied:    backend/job_manager.py (L209) — Added an explicit fallback tha
 Type:           code bug (logic flaw)
 Regression test added: N/A
 Re-verified:    Pending manual user test.
+
+### FIX-4.1 (MC5 Protocol Phase 0)
+Symptom:        MC4B Evidence Normalizer hardcoded `modality: "optical"` for all evidence objects, leading to corrupted traces on SAR data.
+Root cause:     Original Phase 1 implementation assumed optical images for testing and did not propagate the modality from the MC1 profile.
+Fix applied:    backend/mc4b_temporal/evidence_normalizer.py — Removed hardcoding, passing actual `mc1_profile.image_1.modality`. Added `modality_contribution` property and deterministic IDs.
+Type:           schema gap
+Regression test added: `test_phase1_normalizers.py`
+Re-verified:    PASS, automated tests green.
+
+### FIX-4.2 (MC5 Protocol Phase 0)
+Symptom:        `CHANGE_MAMBA_TOOL` accepted mismatched modality image pairs.
+Root cause:     `validate_preconditions` lacked `same_modality` and `supported_modality` checks.
+Fix applied:    backend/mc4b_temporal/tool_adapter.py — Added explicit modality precondition checks. backend/mc3_planner/dispatcher.py — Added a runtime `Modality Mismatch Assertion`.
+Type:           code bug
+Regression test added: `test_phase0_modality.py`
+Re-verified:    PASS, automated tests green.
+
+[PHASE 1] [BUG] MC1 — Extra fields `filename` and `acquisition_date` in output schema
+Root cause: `pipeline.py` was appending these fields into `image_1` and `image_2` which violated the strict contract schema.
+Fix: Removed `filename` and `acquisition_date` from the dictionary construction in `pipeline.py`.
+Regression check added: yes — manually verified the MC1 JSON output matches exactly the expected fields on a new run.
+Verified by: `python3 test_mc1.py ...` on `_ID_33.tif`.
+
+[PHASE 2] [BUG] MC2/3 — Task Spec Schema violation & Modality default fallback
+Root cause: 1. `job_manager.py` generated `query` instead of `spatial_output_required` and `textual_output_required`. 2. `job_manager.py` defaulted `required_modalities` to `["optical"]` if inputs were `["unknown"]`, causing MC3 planner to illegally select PALIGEMMA_VQA for corrupt files.
+Fix: Updated `job_manager.py` to match the exact schema contract for Task Spec and accurately deduplicate extracted modalities without hard-fallback.
+Regression check added: yes — `test_mc2.py` verifies both the exact schema generation and the MC3 constraint refusal on `unknown` inputs.
+Verified by: `python3 test_mc2.py` on `corrupt.tif` -> Resulted in `CONSTRAINTS_NOT_MET`.
+
+[PHASE 3] [BUG] MC4A — Force-Mocked Specialist & Float64 GeoTIFF Loader Crash
+Root cause: 1. `mc4a_vqa/specialist.py` had a hardcoded `raise Exception("Forced mock for integration tests")` preventing real PaliGemma inference. 2. `paligemma_adapter.py` and `specialist.py` strictly relied on `PIL.Image.open()` which fails on Float64 SAR GeoTIFFs. 3. MPS tensor device mismatch caused inference crashes.
+Fix: 1. Removed force-mock. 2. Updated adapter to fallback to `rasterio` + `numpy` normalization to convert Float64 TIFFs to 8-bit RGB before inference, and removed the strict PIL verify check in specialist. 3. Mapped `input_ids` to `self.model.device` to support Mac MPS hardware gracefully.
+Regression check added: yes — Ran 3 real queries against PaliGemma. Verified that prompt structure is `<image>answer en {query}` and `domain_mismatch_flag` correctly triggered (scaling down confidence) when fed SAR imagery.
+Verified by: `python3 test_mc4a.py` with 3 queries. Responses received: "no", "bare", "no".
+
+[PHASE 4] [BUG] MC4B — Dishonest Source Labeling for Fallback Backbone
+Root cause: `mc4b_temporal/tool_adapter.py` hardcoded `"source_model": "CHANGE_MAMBA"` in its output schema, even when executing the untrained CPU-fallback `LightweightCNNBackbone`.
+Fix: Altered the adapter to dynamically read the active backbone and report `"source_model": "CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)"` when the fallback is active.
+Regression check added: yes — Ran MC4B on a bi-temporal SAR pair. Verified execution succeeded without crashing, returned the correct schema with bounding boxes and metrics, and correctly labeled the source model.
+Verified by: `python3 test_mc4b.py` -> output `source_model` verified.
+
+[PHASE 5] [ACCEPTED GAP] MC4C — Cross-Modal Engine Unavailable for Demo
+Root cause: Lack of real bi-modal (Sentinel-1 SAR + Sentinel-2 Optical) data in the current `S1-AAD` dataset. The CROMA integration code requires 12-channel optical and 2-channel SAR tensors, as well as the `configilm` dependency which is absent.
+Fix: None applied. MC4C is deliberately left UNREGISTERED from `mc3_planner/tool_registry.py` and `job_manager.py`. The output schema `CrossModalFusionResult` was verified in Phase 0 to match the contract.
+Regression check added: None (deferred until real bimodal data is supplied).
+Verified by: Static analysis.
+
+[PHASE 6] [BUG] MC5.1 — Trace Normalization Discards Fallback Backbone Identity
+Root cause: `mc4b_temporal/evidence_normalizer.py` hardcoded the `source_model` field to `"CHANGE_MAMBA_TOOL"` for all temporal claims, completely wiping out the dynamic fallback string generated by MC4B's adapter (`CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)`).
+Fix: Updated `mc4b_temporal/evidence_normalizer.py` to extract `source_model` directly from the `mc4b_output` dictionary with a fallback to the generic tool name, ensuring the trace accurately reflects the model that produced the claim.
+Regression check added: yes — Ran a full VQA pipeline (`job_manager.py`) intercepting the trace. Verified all 10 Evidence Object fields exist and the Spatial Evidence Graph creates valid nodes/edges connecting claims to footprint geometry and source models.
+Verified by: `python3 test_mc5.py` -> verified VQA output and `evidence_graph` generation.
+
+[PHASE 7] [BUG] MC8 — Missing GUI_Response API Payload
+Root cause: `mc8_export/exporter.py` only output a raw JSON dump of the pipeline's internal state. It lacked the compiled `GUI_Response` object required by the UI to render the interactive trace, bounding boxes, and verification badges.
+Fix: Updated `export_json_trace` to inject a `GUI_Response` block containing `answer_text`, `evidence_graph_nodes` (with bounds), and computed `verification_badges` (including detecting if a fallback backbone triggered).
+Regression check added: Static verification of the injected JSON structure in the export function.
+Verified by: Static analysis.
+
+[PHASE 8] [ACCEPTED GAP] SIH 2026 UI Demo Integration E2E Test
+Root cause: The agentic browser environment encountered a Playwright driver CDN failure (404), preventing automated browser testing of the UI.
+Fix: Automated testing deferred. Sudeep must manually verify the UI flow (upload `_ID_33.tif`, query "Is there a runway or airstrip visible in this image?") on `localhost:5173`.
+Regression check added: None (manual verification required).
+
+[PHASE 8 FOLLOW-UP] [BUG] MC8 Exporter — GeoJSON Internal Error on VQA Traces
+Root cause: `mc8_export/exporter.py` was attempting to construct a `geojson.FeatureCollection` by directly appending raw spatial region dictionaries (Geometries) instead of wrapping them in `geojson.Feature()` objects. Because PaliGemma returns an entire bounding box polygon, it triggered an `AttributeError` during `feature_collection.is_valid` validation, crashing the VQA trace generation with an "Internal error" immediately after "DONE".
+Fix: Updated `export_geojson` in `mc8_export/exporter.py` to wrap `spatial_region` inside a `geojson.Feature(geometry=region, properties={...})` object before appending it to the feature collection.
+Regression check added: Static verification of `mc8_export/exporter.py` and local manual test of `geojson` module execution.

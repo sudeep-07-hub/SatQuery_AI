@@ -59,6 +59,10 @@ export default function ResultPanel({ status, result, evidenceGraph, files, jobI
     }
 
     const hasNonLocalized = result.caveats && result.caveats.includes("Single-source unverified evidence.");
+    
+    // Extract evidence objects from the graph
+    const evidenceNodes = evidenceGraph?.nodes?.filter((n: any) => n.type === 'evidence') || [];
+    const [selectedEvidenceId, setSelectedEvidenceId] = React.useState<string | null>(null);
 
     return (
       <div className="result-panel">
@@ -93,17 +97,52 @@ export default function ResultPanel({ status, result, evidenceGraph, files, jobI
         )}
         
         <div className="claims-section" style={{ marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '14px', marginBottom: '8px', color: '#4b5563' }}>Evidence Claims</h3>
-          <ul style={{ listStyleType: 'disc', paddingLeft: '20px', fontSize: '14px', lineHeight: '1.5' }}>
-            {result.claims?.map((c: string, idx: number) => (
-              <li key={idx}>{c}</li>
-            ))}
-          </ul>
+          <h3 style={{ fontSize: '14px', marginBottom: '8px', color: '#4b5563' }}>Evidence Claims (Click to highlight region)</h3>
+          {evidenceNodes.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {evidenceNodes.map((node: any) => {
+                const ev = node.data;
+                const isSelected = selectedEvidenceId === ev.evidence_id;
+                return (
+                  <div 
+                    key={ev.evidence_id}
+                    onClick={() => setSelectedEvidenceId(isSelected ? null : ev.evidence_id)}
+                    style={{ 
+                      padding: '10px', 
+                      border: isSelected ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      background: isSelected ? '#eff6ff' : '#ffffff',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}>{ev.claim}</div>
+                    <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: '#6b7280' }}>
+                      <span><strong>Model:</strong> {ev.source_model}</span>
+                      <span><strong>Modality:</strong> {ev.modality}</span>
+                      <span><strong>Conf:</strong> {(ev.confidence * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <ul style={{ listStyleType: 'disc', paddingLeft: '20px', fontSize: '14px', lineHeight: '1.5' }}>
+              {result.claims?.map((c: string, idx: number) => (
+                <li key={idx}>{c}</li>
+              ))}
+            </ul>
+          )}
         </div>
         
         {!hasNonLocalized && (
           <div className="map-container-wrapper" style={{ marginTop: '20px' }}>
-            <BeforeAfterViewer evidenceGraph={evidenceGraph} files={files} jobId={jobId} />
+            <BeforeAfterViewer 
+              evidenceGraph={evidenceGraph} 
+              files={files} 
+              jobId={jobId} 
+              selectedEvidenceId={selectedEvidenceId} 
+            />
           </div>
         )}
         

@@ -109,6 +109,26 @@ def validate_preconditions(mc1_profile: Dict) -> Dict:
     img1 = mc1_profile.get("image_1", {})
     img2 = mc1_profile.get("image_2", {})
 
+    # Check modality match and support
+    modality1 = img1.get("modality")
+    modality2 = img2.get("modality")
+    if modality1 != modality2:
+        failures.append(
+            {
+                "check": "same_modality",
+                "reason": f"Images must have the same modality. Got {modality1} and {modality2}",
+                "actual": {"modality_1": modality1, "modality_2": modality2},
+            }
+        )
+    elif modality1 not in ["optical", "sar"]:
+        failures.append(
+            {
+                "check": "supported_modality",
+                "reason": f"Unsupported modality {modality1}. Must be 'optical' or 'sar'",
+                "actual": {"modality": modality1},
+            }
+        )
+
     # Check same CRS
     crs1 = img1.get("crs")
     crs2 = img2.get("crs")
@@ -172,7 +192,8 @@ class ChangeMambaAdapter:
     """
 
     def __init__(self):
-        backbone = get_backbone(config.BACKBONE)
+        self.backbone_name = config.BACKBONE
+        backbone = get_backbone(self.backbone_name)
         self.detector = ChangeDetector(backbone)
         self.detector.eval()
 
@@ -264,5 +285,5 @@ class ChangeMambaAdapter:
             "model_confidence": round(confidence, 4),
             "semantics": sem_result,
             "caption": caption_result["caption"],
-            "source_model": "CHANGE_MAMBA",
+            "source_model": f"CHANGE_MAMBA_TOOL (FALLBACK: {self.backbone_name.upper()})",
         }

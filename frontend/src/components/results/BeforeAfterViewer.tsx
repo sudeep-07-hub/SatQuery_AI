@@ -6,19 +6,28 @@ interface BeforeAfterViewerProps {
   evidenceGraph: any;
   files: any[];
   jobId: string;
+  selectedEvidenceId?: string | null;
 }
 
-export default function BeforeAfterViewer({ evidenceGraph, files, jobId }: BeforeAfterViewerProps) {
+export default function BeforeAfterViewer({ evidenceGraph, files, jobId, selectedEvidenceId }: BeforeAfterViewerProps) {
   const [activeImage, setActiveImage] = useState<number>(0);
   const [showMask, setShowMask] = useState<boolean>(true);
   const [showRegions, setShowRegions] = useState<boolean>(true);
 
-  // Extract GeoJSON features from Evidence Graph
-  const features = [];
+  // Extract GeoJSON features from Evidence Graph, attaching evidence_id for styling
+  const features: any[] = [];
   if (evidenceGraph && evidenceGraph.nodes) {
     for (const node of evidenceGraph.nodes) {
       if (node.type === 'evidence' && node.data?.spatial_region) {
-        features.push(node.data.spatial_region);
+        // Clone feature and inject evidence_id into properties
+        const feature = {
+          ...node.data.spatial_region,
+          properties: {
+            ...node.data.spatial_region.properties,
+            evidence_id: node.data.evidence_id
+          }
+        };
+        features.push(feature);
       }
     }
   }
@@ -45,6 +54,17 @@ export default function BeforeAfterViewer({ evidenceGraph, files, jobId }: Befor
       bounds = [[minLat, minLng], [maxLat, maxLng]];
     }
   }
+
+  const getFeatureStyle = (feature: any) => {
+    const featureId = feature.properties?.evidence_id;
+    if (selectedEvidenceId) {
+      if (featureId === selectedEvidenceId) {
+        return { color: '#3b82f6', weight: 4, fillColor: '#3b82f6', fillOpacity: 0.2 };
+      }
+      return { color: '#9ca3af', weight: 1, fillColor: 'transparent' };
+    }
+    return { color: '#ef4444', weight: 2, fillColor: 'transparent' };
+  };
 
   return (
     <div className="before-after-viewer">
@@ -97,13 +117,9 @@ export default function BeforeAfterViewer({ evidenceGraph, files, jobId }: Befor
           
           {showRegions && features.map((feature, idx) => (
             <GeoJSON 
-              key={`region-${idx}`} 
+              key={`region-${idx}-${selectedEvidenceId}`} 
               data={feature} 
-              style={{
-                color: '#ef4444',
-                weight: 2,
-                fillColor: 'transparent'
-              }}
+              style={() => getFeatureStyle(feature)}
             />
           ))}
 

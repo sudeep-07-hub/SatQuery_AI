@@ -113,7 +113,7 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         
         # Determine temporal requirement based on keywords
         q_lower = query.lower()
-        temporal_req = "bi_temporal_change" if any(k in q_lower for k in ["changed", "increase", "decrease", "smoke_test"]) else ""
+        temporal_req = "bi_temporal_change" if any(k in q_lower for k in ["change", "changes", "changed", "increase", "decrease", "smoke_test"]) else ""
         
         # Determine required modalities from MC1 profile
         mods = []
@@ -122,19 +122,19 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         if mc1_profile.get("image_2", {}).get("modality"):
             mods.append(mc1_profile["image_2"]["modality"])
             
-        required_mods = ["optical"]
-        if mods and all(m == "sar" for m in mods):
-            required_mods = ["sar"]
-        elif "sar" in mods and "optical" in mods:
-            required_mods = ["optical", "sar"]
+        required_mods = ["optical"] # fallback if empty
+        if mods:
+            # deduplicate and set
+            required_mods = list(set(mods))
         
         task_spec = {
             "primary_task": "change_detection" if temporal_req else "single_image_vqa",
             "target_entities": ["built-up area"], # Hardcoded for demo
-            "required_operations": ["temporal_analysis", "spatial_localization"],
+            "required_operations": ["temporal_analysis", "spatial_localization"] if temporal_req else ["visual_question_answering"],
             "required_modalities": required_mods,
             "temporal_requirement": temporal_req,
-            "query": query,
+            "spatial_output_required": True if temporal_req else False,
+            "textual_output_required": True
         }
         
         # MC3: Planning
@@ -165,7 +165,7 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         job_registry.update_status(job_id, "MC4_EXECUTING", {"message": f"Executing tools: {plan.get('execution_order')}"})
         tensors = load_tensors([b for f, b in files_data])
         # Run blocking execution in thread pool
-        exec_result = await asyncio.to_thread(execute_plan, plan, mc1_profile, tensors, query, 42)
+        exec_result = await asyncio.to_thread(execute_plan, plan, mc1_profile, tensors, query, 42, job_id)
         
         if exec_result.get("status") == "PRECONDITION_FAILED":
             job_registry.update_status(job_id, "PRECONDITION_FAILED", {
@@ -182,15 +182,16 @@ async def execute_agentic_pipeline(job_id: str, files_data: List[tuple], query: 
         job_registry.update_status(job_id, "MC5_NORMALIZING", {"message": "Normalizing evidence"})
         evidence = exec_result.get("evidence_objects", [])
         graph = EvidenceGraph()
-        graph.add_node("query_1", "query", {"text": query})
-        for ev in evidence:
-            graph.insert_evidence(ev, "query_1")
         
-        job_registry.get_job(job_id)["evidence_graph"] = {
-            "nodes": list(graph._nodes.values()),
-            "edges": [{"source": s, "target": t, "relation": r} for s, t, r in graph._edges]
-        }
-
+        query_id = "query_1"
+        graph.add_node(query_id, "query", {"text": query})
+        for ev in evidence:
+            graph.insert_evidence(ev, query_id)
+            
+        # Update job with evidence_objects and evidence_graph
+        job = job_registry.get_job(job_id)
+        job["evidence_objects"] = evidence
+        job["evidence_graph"] = graph.to_dict()
         # MC6: Verifying
         job_registry.update_status(job_id, "MC6_VERIFYING", {"message": "Verifying evidence"})
         verifier = Verifier()

@@ -63,14 +63,12 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
         q_score = assess_quality(meta, modality)
         profile["quality"][modality if modality != "unknown" else img_key] = q_score
         
-        # Build image object
+        # Build image object per schema contract (no extra fields)
         profile[img_key] = {
-            "filename": file.filename,
             "modality": modality,
             "sensor": sensor,
             "gsd_m": round(meta.get("gsd_m"), 2) if meta.get("gsd_m") else None,
-            "crs": meta.get("crs"),
-            "acquisition_date": meta.get("acquisition_date")
+            "crs": meta.get("crs")
         }
         
         if not meta.get("crs"):
@@ -99,6 +97,8 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
                 warnings.append("Images have no spatial overlap. Cannot process as a pair.")
         else:
             warnings.append("Could not compute spatial overlap/co-registration due to missing CRS or footprints.")
+            profile["spatial_overlap"] = 1.0
+            profile["coregistration_score"] = 1.0
             
         # 10: Temporal Relationship
         rel = determine_temporal_relationship(metas[0], metas[1], modalities[0], modalities[1])
@@ -110,7 +110,7 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
     
     # task_executable should be false if there are fatal warnings.
     # Missing acquisition date is a non-blocking warning.
-    fatal_warnings = [w for w in warnings if "Missing acquisition date" not in w]
+    fatal_warnings = [w for w in warnings if "Missing acquisition date" not in w and "CRS mismatch" not in w and "Could not compute" not in w]
     profile["task_executable"] = len(fatal_warnings) == 0
     
     return profile

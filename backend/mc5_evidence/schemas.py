@@ -8,6 +8,7 @@ EVIDENCE_OBJECT_REQUIRED_KEYS = {
     "evidence_type",
     "spatial_region",
     "modality",
+    "modality_contribution",
     "timestamp",
     "source_model",
     "source_input",

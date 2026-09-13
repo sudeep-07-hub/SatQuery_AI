@@ -17,12 +17,26 @@ class PaliGemmaVQAAdapter:
 
     def predict(self, image_input, query: str) -> dict:
         if isinstance(image_input, str):
-            image = Image.open(image_input).convert("RGB")
+            try:
+                image = Image.open(image_input).convert("RGB")
+            except Exception:
+                # Fallback to rasterio for float64 SAR TIFFs
+                import rasterio
+                import numpy as np
+                with rasterio.open(image_input) as src:
+                    arr = src.read(1)
+                    # Simple min-max normalization to 0-255
+                    arr = np.nan_to_num(arr)
+                    arr_min, arr_max = arr.min(), arr.max()
+                    if arr_max > arr_min:
+                        arr = (arr - arr_min) / (arr_max - arr_min) * 255
+                    arr = arr.astype(np.uint8)
+                    image = Image.fromarray(arr).convert("RGB")
         else:
             image = image_input.convert("RGB")
             
         prompt = f"<image>answer en {query}"
-        inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(self.device)
+        inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(self.model.device)
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,

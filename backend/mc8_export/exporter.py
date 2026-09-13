@@ -19,7 +19,7 @@ def export_geojson(job: Dict, output_dir: str) -> str:
             if node.get("type") == "evidence":
                 region = node.get("data", {}).get("spatial_region")
                 if region:
-                    features.append(region)
+                    features.append(geojson.Feature(geometry=region, properties={"evidence_id": node.get("id")}))
                     
     feature_collection = geojson.FeatureCollection(features)
     
@@ -36,11 +36,30 @@ def export_geojson(job: Dict, output_dir: str) -> str:
 def export_json_trace(job: Dict, output_dir: str) -> str:
     """Generate JSON execution trace."""
     filepath = os.path.join(output_dir, f"export_{job['job_id']}_trace.json")
+    result = job.get("result", {})
+    answer_text = result.get("final_answer", "")
+    verification_badges = list(result.get("caveats", []))
+    
+    # Add fallback badges if any evidence is from a fallback model
+    for ev in job.get("evidence_objects", []):
+        sm = str(ev.get("source_model", ""))
+        if "FALLBACK" in sm and "Fallback CNN Active" not in verification_badges:
+            verification_badges.append("Fallback CNN Active")
+            
     with open(filepath, "w") as f:
         json.dump({
             "job_id": job["job_id"],
             "status": job["status"],
-            "trace": job["progress_trace"]
+            "trace": job["progress_trace"],
+            "structured_trace": {
+                "evidence_objects": job.get("evidence_objects", []),
+                "evidence_graph": job.get("evidence_graph", {})
+            },
+            "GUI_Response": {
+                "answer_text": answer_text,
+                "evidence_graph_nodes": job.get("evidence_graph", {}).get("nodes", []),
+                "verification_badges": verification_badges
+            }
         }, f, indent=2)
     return filepath
 

@@ -22,8 +22,6 @@ class PaliGemmaVQASpecialist:
         
         # Try loading real adapter; gracefully fall back to mock
         try:
-            # FORCE MOCK FOR TESTING
-            raise Exception("Forced mock for integration tests")
             self.adapter = PaliGemmaVQAAdapter()
             self.is_mock = False
         except Exception as e:
@@ -95,15 +93,7 @@ class PaliGemmaVQASpecialist:
             output["blocked_reason"] = "input_quality_below_threshold"
             return output
 
-        # Ensure image is valid before inference
-        if isinstance(image_input, str):
-            try:
-                # Just verify it's openable
-                with Image.open(image_input) as img:
-                    img.verify()
-            except Exception as e:
-                output["blocked_reason"] = f"image_load_failed: {e}"
-                return output
+        # Ensure image is valid before inference (handled by adapter now, which supports SAR)
 
         # Modality Guard
         modality = img_meta.get("modality", "optical")
