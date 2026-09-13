@@ -1,0 +1,414 @@
+{
+  "job_id": "c3fda854-42fe-414d-8863-32c7006396c7",
+  "status": "FAILED",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-11T20:38:24.518452",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-11T20:38:24.572221",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "visual_question_answering"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "",
+        "spatial_output_required": false,
+        "textual_output_required": true
+      },
+      "timestamp": "2026-09-11T20:38:24.572231",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['PALIGEMMA_VQA']",
+      "timestamp": "2026-09-11T20:38:24.572247",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Normalizing evidence",
+      "timestamp": "2026-09-11T20:38:47.912258",
+      "stage": "MC5_NORMALIZING"
+    },
+    {
+      "message": "Verifying evidence",
+      "timestamp": "2026-09-11T20:38:47.917946",
+      "stage": "MC6_VERIFYING"
+    },
+    {
+      "message": "Generating final answer",
+      "timestamp": "2026-09-11T20:38:47.917998",
+      "stage": "MC7_ANSWERING"
+    },
+    {
+      "message": "Pipeline complete",
+      "timestamp": "2026-09-11T20:38:47.918003",
+      "stage": "DONE"
+    },
+    {
+      "message": "Internal error",
+      "error": "is_valid",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/sukesh/Library/Python/3.9/lib/python/site-packages/geojson/feature.py\", line 54, in __getitem__\n    return self.get(\"features\", ())[key]\nTypeError: list indices must be integers or slices, not str\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/sukesh/Library/Python/3.9/lib/python/site-packages/geojson/base.py\", line 38, in __getattr__\n    return self[name]\n  File \"/Users/sukesh/Library/Python/3.9/lib/python/site-packages/geojson/feature.py\", line 56, in __getitem__\n    return super(GeoJSON, self).__getitem__(key)\nKeyError: 'is_valid'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Users/sukesh/Desktop/satquery/backend/job_manager.py\", line 263, in execute_agentic_pipeline\n    job[\"exports\"] = generate_exports(job)\n  File \"/Users/sukesh/Desktop/satquery/backend/mc8_export/exporter.py\", line 164, in generate_exports\n    exports[\"geojson\"] = export_geojson(job, output_dir)\n  File \"/Users/sukesh/Desktop/satquery/backend/mc8_export/exporter.py\", line 27, in export_geojson\n    if not feature_collection.is_valid:\n  File \"/Users/sukesh/Library/Python/3.9/lib/python/site-packages/geojson/base.py\", line 40, in __getattr__\n    raise AttributeError(name)\nAttributeError: is_valid\n",
+      "timestamp": "2026-09-11T20:38:47.992274",
+      "stage": "FAILED"
+    }
+  ],
+  "structured_trace": {
+    "evidence_objects": [
+      {
+        "evidence_id": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+        "claim": "all colors of the rainbow",
+        "evidence_type": "vqa_grounded_detection",
+        "spatial_region": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1000.0,
+                0
+              ],
+              [
+                1000.0,
+                -1000.0
+              ],
+              [
+                0,
+                -1000.0
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        },
+        "modality": "sar",
+        "modality_contribution": {
+          "sar": 1.0
+        },
+        "timestamp": "2026-09-11T20:38:47.911676+00:00",
+        "source_model": "PALIGEMMA_VQA_TOOL",
+        "source_input": "image_1",
+        "confidence": 0.21915,
+        "processing_parameters": {
+          "prompt_prefix": "answer en",
+          "max_new_tokens": 60,
+          "dtype": "bfloat16",
+          "device": "auto",
+          "model_id": "google/paligemma-3b-pt-224",
+          "timestamp_source": "system_utc",
+          "claim_is_truncated": false,
+          "claim_source": "verbatim",
+          "spatial_region_is_full_image": false
+        }
+      }
+    ],
+    "evidence_graph": {
+      "nodes": [
+        {
+          "id": "query_1",
+          "type": "query",
+          "data": {
+            "text": "Is there a runway or airstrip visible in this image?"
+          }
+        },
+        {
+          "id": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "type": "evidence",
+          "data": {
+            "evidence_id": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+            "claim": "all colors of the rainbow",
+            "evidence_type": "vqa_grounded_detection",
+            "spatial_region": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    0
+                  ]
+                ]
+              ]
+            },
+            "modality": "sar",
+            "modality_contribution": {
+              "sar": 1.0
+            },
+            "timestamp": "2026-09-11T20:38:47.911676+00:00",
+            "source_model": "PALIGEMMA_VQA_TOOL",
+            "source_input": "image_1",
+            "confidence": 0.21915,
+            "processing_parameters": {
+              "prompt_prefix": "answer en",
+              "max_new_tokens": 60,
+              "dtype": "bfloat16",
+              "device": "auto",
+              "model_id": "google/paligemma-3b-pt-224",
+              "timestamp_source": "system_utc",
+              "claim_is_truncated": false,
+              "claim_source": "verbatim",
+              "spatial_region_is_full_image": false
+            }
+          }
+        },
+        {
+          "id": "claim_c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "type": "claim",
+          "data": {
+            "text": "all colors of the rainbow"
+          }
+        },
+        {
+          "id": "model_PALIGEMMA_VQA_TOOL",
+          "type": "model",
+          "data": {
+            "name": "PALIGEMMA_VQA_TOOL"
+          }
+        },
+        {
+          "id": "modality_sar",
+          "type": "modality",
+          "data": {
+            "name": "sar"
+          }
+        },
+        {
+          "id": "ts_79da3ab9",
+          "type": "timestamp",
+          "data": {
+            "value": "2026-09-11T20:38:47.911676+00:00"
+          }
+        },
+        {
+          "id": "region_c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "type": "region",
+          "data": {
+            "spatial_region": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    0
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "source": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "target": "claim_c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "relationship": "supports"
+        },
+        {
+          "source": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "target": "model_PALIGEMMA_VQA_TOOL",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "target": "modality_sar",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "target": "ts_79da3ab9",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "target": "region_c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "relationship": "overlaps"
+        },
+        {
+          "source": "claim_c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "target": "query_1",
+          "relationship": "supports"
+        }
+      ]
+    }
+  },
+  "GUI_Response": {
+    "answer_text": "all colors of the rainbow",
+    "evidence_graph_nodes": [
+      {
+        "id": "query_1",
+        "type": "query",
+        "data": {
+          "text": "Is there a runway or airstrip visible in this image?"
+        }
+      },
+      {
+        "id": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+        "type": "evidence",
+        "data": {
+          "evidence_id": "c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+          "claim": "all colors of the rainbow",
+          "evidence_type": "vqa_grounded_detection",
+          "spatial_region": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1000.0,
+                  0
+                ],
+                [
+                  1000.0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ]
+            ]
+          },
+          "modality": "sar",
+          "modality_contribution": {
+            "sar": 1.0
+          },
+          "timestamp": "2026-09-11T20:38:47.911676+00:00",
+          "source_model": "PALIGEMMA_VQA_TOOL",
+          "source_input": "image_1",
+          "confidence": 0.21915,
+          "processing_parameters": {
+            "prompt_prefix": "answer en",
+            "max_new_tokens": 60,
+            "dtype": "bfloat16",
+            "device": "auto",
+            "model_id": "google/paligemma-3b-pt-224",
+            "timestamp_source": "system_utc",
+            "claim_is_truncated": false,
+            "claim_source": "verbatim",
+            "spatial_region_is_full_image": false
+          }
+        }
+      },
+      {
+        "id": "claim_c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+        "type": "claim",
+        "data": {
+          "text": "all colors of the rainbow"
+        }
+      },
+      {
+        "id": "model_PALIGEMMA_VQA_TOOL",
+        "type": "model",
+        "data": {
+          "name": "PALIGEMMA_VQA_TOOL"
+        }
+      },
+      {
+        "id": "modality_sar",
+        "type": "modality",
+        "data": {
+          "name": "sar"
+        }
+      },
+      {
+        "id": "ts_79da3ab9",
+        "type": "timestamp",
+        "data": {
+          "value": "2026-09-11T20:38:47.911676+00:00"
+        }
+      },
+      {
+        "id": "region_c3fda854-42fe-414d-8863-32c7006396c7_mc4a_0",
+        "type": "region",
+        "data": {
+          "spatial_region": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1000.0,
+                  0
+                ],
+                [
+                  1000.0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    ],
+    "verification_badges": [
+      "Single-source unverified evidence.",
+      "Domain mismatch flag set for non-optical input."
+    ]
+  }
+}

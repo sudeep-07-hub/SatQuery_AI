@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              0,
+              0
+            ],
+            [
+              1000.0,
+              0
+            ],
+            [
+              1000.0,
+              -1000.0
+            ],
+            [
+              0,
+              -1000.0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "evidence_id": "049674e1-4934-4c23-9205-82946524fd64_mc4a_0"
+      }
+    }
+  ]
+}

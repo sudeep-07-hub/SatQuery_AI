@@ -1,0 +1,220 @@
+/Users/sukesh/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:06<00:13,  6.52s/it]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:12<00:05,  5.98s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:13<00:00,  4.03s/it]Loading checkpoint shards: 100%|██████████| 3/3 [00:13<00:00,  4.62s/it]
+Evidence Objects:
+[
+  {
+    "evidence_id": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+    "claim": "very high resolution",
+    "evidence_type": "vqa_grounded_detection",
+    "spatial_region": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [
+            0,
+            0
+          ],
+          [
+            1000.0,
+            0
+          ],
+          [
+            1000.0,
+            -1000.0
+          ],
+          [
+            0,
+            -1000.0
+          ],
+          [
+            0,
+            0
+          ]
+        ]
+      ]
+    },
+    "modality": "sar",
+    "modality_contribution": {
+      "sar": 1.0
+    },
+    "timestamp": "2026-09-11T20:19:05.373091+00:00",
+    "source_model": "PALIGEMMA_VQA_TOOL",
+    "source_input": "image_1",
+    "confidence": 0.16544999999999999,
+    "processing_parameters": {
+      "prompt_prefix": "answer en",
+      "max_new_tokens": 60,
+      "dtype": "bfloat16",
+      "device": "auto",
+      "model_id": "google/paligemma-3b-pt-224",
+      "timestamp_source": "system_utc",
+      "claim_is_truncated": false,
+      "claim_source": "verbatim",
+      "spatial_region_is_full_image": false
+    }
+  }
+]
+
+Evidence Graph:
+{
+  "nodes": [
+    {
+      "id": "query_1",
+      "type": "query",
+      "data": {
+        "text": "Is there a runway or airstrip visible in this image?"
+      }
+    },
+    {
+      "id": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "type": "evidence",
+      "data": {
+        "evidence_id": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+        "claim": "very high resolution",
+        "evidence_type": "vqa_grounded_detection",
+        "spatial_region": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1000.0,
+                0
+              ],
+              [
+                1000.0,
+                -1000.0
+              ],
+              [
+                0,
+                -1000.0
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        },
+        "modality": "sar",
+        "modality_contribution": {
+          "sar": 1.0
+        },
+        "timestamp": "2026-09-11T20:19:05.373091+00:00",
+        "source_model": "PALIGEMMA_VQA_TOOL",
+        "source_input": "image_1",
+        "confidence": 0.16544999999999999,
+        "processing_parameters": {
+          "prompt_prefix": "answer en",
+          "max_new_tokens": 60,
+          "dtype": "bfloat16",
+          "device": "auto",
+          "model_id": "google/paligemma-3b-pt-224",
+          "timestamp_source": "system_utc",
+          "claim_is_truncated": false,
+          "claim_source": "verbatim",
+          "spatial_region_is_full_image": false
+        }
+      }
+    },
+    {
+      "id": "claim_953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "type": "claim",
+      "data": {
+        "text": "very high resolution"
+      }
+    },
+    {
+      "id": "model_PALIGEMMA_VQA_TOOL",
+      "type": "model",
+      "data": {
+        "name": "PALIGEMMA_VQA_TOOL"
+      }
+    },
+    {
+      "id": "modality_sar",
+      "type": "modality",
+      "data": {
+        "name": "sar"
+      }
+    },
+    {
+      "id": "ts_772aea55",
+      "type": "timestamp",
+      "data": {
+        "value": "2026-09-11T20:19:05.373091+00:00"
+      }
+    },
+    {
+      "id": "region_953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "type": "region",
+      "data": {
+        "spatial_region": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1000.0,
+                0
+              ],
+              [
+                1000.0,
+                -1000.0
+              ],
+              [
+                0,
+                -1000.0
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "target": "claim_953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "relationship": "supports"
+    },
+    {
+      "source": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "target": "model_PALIGEMMA_VQA_TOOL",
+      "relationship": "derived_from"
+    },
+    {
+      "source": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "target": "modality_sar",
+      "relationship": "derived_from"
+    },
+    {
+      "source": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "target": "ts_772aea55",
+      "relationship": "derived_from"
+    },
+    {
+      "source": "953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "target": "region_953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "relationship": "overlaps"
+    },
+    {
+      "source": "claim_953fac26-f305-489a-9e96-227875d361af_mc4a_0",
+      "target": "query_1",
+      "relationship": "supports"
+    }
+  ]
+}

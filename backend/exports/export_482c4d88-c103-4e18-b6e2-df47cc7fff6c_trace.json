@@ -1,0 +1,420 @@
+{
+  "job_id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c",
+  "status": "INSUFFICIENT_EVIDENCE",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-11T20:29:00.903322",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-11T20:29:00.974980",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "single_image_vqa",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "visual_question_answering"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "",
+        "spatial_output_required": false,
+        "textual_output_required": true
+      },
+      "timestamp": "2026-09-11T20:29:00.974991",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['PALIGEMMA_VQA']",
+      "timestamp": "2026-09-11T20:29:00.975017",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Normalizing evidence",
+      "timestamp": "2026-09-11T20:29:23.555121",
+      "stage": "MC5_NORMALIZING"
+    },
+    {
+      "message": "Verifying evidence",
+      "timestamp": "2026-09-11T20:29:23.560246",
+      "stage": "MC6_VERIFYING"
+    },
+    {
+      "message": "Re-plan triggered by verifier",
+      "triggers": [
+        {
+          "trigger": "low_confidence",
+          "evidence_id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "confidence": 0.18305999999999997,
+          "threshold": 0.4
+        }
+      ],
+      "timestamp": "2026-09-11T20:29:23.560631",
+      "stage": "MC6_REPLANNING"
+    },
+    {
+      "message": "Verification failed, insufficient evidence",
+      "triggers": [
+        {
+          "trigger": "low_confidence",
+          "evidence_id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "confidence": 0.18305999999999997,
+          "threshold": 0.4
+        }
+      ],
+      "timestamp": "2026-09-11T20:29:23.560636",
+      "stage": "INSUFFICIENT_EVIDENCE"
+    }
+  ],
+  "structured_trace": {
+    "evidence_objects": [
+      {
+        "evidence_id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+        "claim": "lots of dots",
+        "evidence_type": "vqa_grounded_detection",
+        "spatial_region": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1000.0,
+                0
+              ],
+              [
+                1000.0,
+                -1000.0
+              ],
+              [
+                0,
+                -1000.0
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        },
+        "modality": "sar",
+        "modality_contribution": {
+          "sar": 1.0
+        },
+        "timestamp": "2026-09-11T20:29:23.554524+00:00",
+        "source_model": "PALIGEMMA_VQA_TOOL",
+        "source_input": "image_1",
+        "confidence": 0.18305999999999997,
+        "processing_parameters": {
+          "prompt_prefix": "answer en",
+          "max_new_tokens": 60,
+          "dtype": "bfloat16",
+          "device": "auto",
+          "model_id": "google/paligemma-3b-pt-224",
+          "timestamp_source": "system_utc",
+          "claim_is_truncated": false,
+          "claim_source": "verbatim",
+          "spatial_region_is_full_image": false
+        }
+      }
+    ],
+    "evidence_graph": {
+      "nodes": [
+        {
+          "id": "query_1",
+          "type": "query",
+          "data": {
+            "text": "Is there a runway or airstrip visible in this image?"
+          }
+        },
+        {
+          "id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "type": "evidence",
+          "data": {
+            "evidence_id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+            "claim": "lots of dots",
+            "evidence_type": "vqa_grounded_detection",
+            "spatial_region": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    0
+                  ]
+                ]
+              ]
+            },
+            "modality": "sar",
+            "modality_contribution": {
+              "sar": 1.0
+            },
+            "timestamp": "2026-09-11T20:29:23.554524+00:00",
+            "source_model": "PALIGEMMA_VQA_TOOL",
+            "source_input": "image_1",
+            "confidence": 0.18305999999999997,
+            "processing_parameters": {
+              "prompt_prefix": "answer en",
+              "max_new_tokens": 60,
+              "dtype": "bfloat16",
+              "device": "auto",
+              "model_id": "google/paligemma-3b-pt-224",
+              "timestamp_source": "system_utc",
+              "claim_is_truncated": false,
+              "claim_source": "verbatim",
+              "spatial_region_is_full_image": false
+            }
+          }
+        },
+        {
+          "id": "claim_482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "type": "claim",
+          "data": {
+            "text": "lots of dots"
+          }
+        },
+        {
+          "id": "model_PALIGEMMA_VQA_TOOL",
+          "type": "model",
+          "data": {
+            "name": "PALIGEMMA_VQA_TOOL"
+          }
+        },
+        {
+          "id": "modality_sar",
+          "type": "modality",
+          "data": {
+            "name": "sar"
+          }
+        },
+        {
+          "id": "ts_ed232127",
+          "type": "timestamp",
+          "data": {
+            "value": "2026-09-11T20:29:23.554524+00:00"
+          }
+        },
+        {
+          "id": "region_482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "type": "region",
+          "data": {
+            "spatial_region": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    0
+                  ],
+                  [
+                    1000.0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    -1000.0
+                  ],
+                  [
+                    0,
+                    0
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "source": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "target": "claim_482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "relationship": "supports"
+        },
+        {
+          "source": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "target": "model_PALIGEMMA_VQA_TOOL",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "target": "modality_sar",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "target": "ts_ed232127",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "target": "region_482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "relationship": "overlaps"
+        },
+        {
+          "source": "claim_482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "target": "query_1",
+          "relationship": "supports"
+        }
+      ]
+    }
+  },
+  "GUI_Response": {
+    "answer_text": "",
+    "evidence_graph_nodes": [
+      {
+        "id": "query_1",
+        "type": "query",
+        "data": {
+          "text": "Is there a runway or airstrip visible in this image?"
+        }
+      },
+      {
+        "id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+        "type": "evidence",
+        "data": {
+          "evidence_id": "482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+          "claim": "lots of dots",
+          "evidence_type": "vqa_grounded_detection",
+          "spatial_region": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1000.0,
+                  0
+                ],
+                [
+                  1000.0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ]
+            ]
+          },
+          "modality": "sar",
+          "modality_contribution": {
+            "sar": 1.0
+          },
+          "timestamp": "2026-09-11T20:29:23.554524+00:00",
+          "source_model": "PALIGEMMA_VQA_TOOL",
+          "source_input": "image_1",
+          "confidence": 0.18305999999999997,
+          "processing_parameters": {
+            "prompt_prefix": "answer en",
+            "max_new_tokens": 60,
+            "dtype": "bfloat16",
+            "device": "auto",
+            "model_id": "google/paligemma-3b-pt-224",
+            "timestamp_source": "system_utc",
+            "claim_is_truncated": false,
+            "claim_source": "verbatim",
+            "spatial_region_is_full_image": false
+          }
+        }
+      },
+      {
+        "id": "claim_482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+        "type": "claim",
+        "data": {
+          "text": "lots of dots"
+        }
+      },
+      {
+        "id": "model_PALIGEMMA_VQA_TOOL",
+        "type": "model",
+        "data": {
+          "name": "PALIGEMMA_VQA_TOOL"
+        }
+      },
+      {
+        "id": "modality_sar",
+        "type": "modality",
+        "data": {
+          "name": "sar"
+        }
+      },
+      {
+        "id": "ts_ed232127",
+        "type": "timestamp",
+        "data": {
+          "value": "2026-09-11T20:29:23.554524+00:00"
+        }
+      },
+      {
+        "id": "region_482c4d88-c103-4e18-b6e2-df47cc7fff6c_mc4a_0",
+        "type": "region",
+        "data": {
+          "spatial_region": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1000.0,
+                  0
+                ],
+                [
+                  1000.0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  -1000.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ]
+            ]
+          }
+        }
+      }
+    ],
+    "verification_badges": []
+  }
+}

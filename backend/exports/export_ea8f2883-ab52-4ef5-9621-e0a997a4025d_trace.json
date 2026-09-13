@@ -1,0 +1,274 @@
+{
+  "job_id": "ea8f2883-ab52-4ef5-9621-e0a997a4025d",
+  "status": "DONE",
+  "trace": [
+    {
+      "message": "Validating inputs",
+      "timestamp": "2026-09-11T20:39:43.039761",
+      "stage": "MC1_VALIDATING"
+    },
+    {
+      "message": "Parsing query",
+      "timestamp": "2026-09-11T20:39:43.104787",
+      "stage": "MC2_PARSING"
+    },
+    {
+      "message": "Planning workflow",
+      "task_spec": {
+        "primary_task": "change_detection",
+        "target_entities": [
+          "built-up area"
+        ],
+        "required_operations": [
+          "temporal_analysis",
+          "spatial_localization"
+        ],
+        "required_modalities": [
+          "sar"
+        ],
+        "temporal_requirement": "bi_temporal_change",
+        "spatial_output_required": true,
+        "textual_output_required": true
+      },
+      "timestamp": "2026-09-11T20:39:43.104802",
+      "stage": "MC3_PLANNING"
+    },
+    {
+      "message": "Executing tools: ['CHANGE_MAMBA']",
+      "timestamp": "2026-09-11T20:39:43.104872",
+      "stage": "MC4_EXECUTING"
+    },
+    {
+      "message": "Normalizing evidence",
+      "timestamp": "2026-09-11T20:39:43.232767",
+      "stage": "MC5_NORMALIZING"
+    },
+    {
+      "message": "Verifying evidence",
+      "timestamp": "2026-09-11T20:39:43.232841",
+      "stage": "MC6_VERIFYING"
+    },
+    {
+      "message": "Generating final answer",
+      "timestamp": "2026-09-11T20:39:43.232852",
+      "stage": "MC7_ANSWERING"
+    },
+    {
+      "message": "Pipeline complete",
+      "timestamp": "2026-09-11T20:39:43.232856",
+      "stage": "DONE"
+    }
+  ],
+  "structured_trace": {
+    "evidence_objects": [
+      {
+        "evidence_id": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+        "claim": "No significant change detected. Changed area: 0.0 m\u00b2, 0.0% of scene.",
+        "evidence_type": "bitemporal_change_detection",
+        "spatial_region": null,
+        "modality": "sar",
+        "modality_contribution": {
+          "sar": 1.0
+        },
+        "timestamp": {
+          "t1": "unknown",
+          "t2": "unknown"
+        },
+        "source_model": "CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)",
+        "source_input": {
+          "image_1": null,
+          "image_2": null,
+          "query": "Find changes"
+        },
+        "confidence": 0.4921,
+        "processing_parameters": {
+          "model_identity": "CHANGE_MAMBA",
+          "claim_source": "synthesized",
+          "threshold": 0.5,
+          "semantic_enabled": true,
+          "change_score": 0.0
+        }
+      }
+    ],
+    "evidence_graph": {
+      "nodes": [
+        {
+          "id": "query_1",
+          "type": "query",
+          "data": {
+            "text": "Find changes"
+          }
+        },
+        {
+          "id": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "type": "evidence",
+          "data": {
+            "evidence_id": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+            "claim": "No significant change detected. Changed area: 0.0 m\u00b2, 0.0% of scene.",
+            "evidence_type": "bitemporal_change_detection",
+            "spatial_region": null,
+            "modality": "sar",
+            "modality_contribution": {
+              "sar": 1.0
+            },
+            "timestamp": {
+              "t1": "unknown",
+              "t2": "unknown"
+            },
+            "source_model": "CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)",
+            "source_input": {
+              "image_1": null,
+              "image_2": null,
+              "query": "Find changes"
+            },
+            "confidence": 0.4921,
+            "processing_parameters": {
+              "model_identity": "CHANGE_MAMBA",
+              "claim_source": "synthesized",
+              "threshold": 0.5,
+              "semantic_enabled": true,
+              "change_score": 0.0
+            }
+          }
+        },
+        {
+          "id": "claim_ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "type": "claim",
+          "data": {
+            "text": "No significant change detected. Changed area: 0.0 m\u00b2, 0.0% of scene."
+          }
+        },
+        {
+          "id": "model_CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)",
+          "type": "model",
+          "data": {
+            "name": "CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)"
+          }
+        },
+        {
+          "id": "modality_sar",
+          "type": "modality",
+          "data": {
+            "name": "sar"
+          }
+        },
+        {
+          "id": "ts_625a5d57",
+          "type": "timestamp",
+          "data": {
+            "value": {
+              "t1": "unknown",
+              "t2": "unknown"
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "source": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "target": "claim_ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "relationship": "supports"
+        },
+        {
+          "source": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "target": "model_CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "target": "modality_sar",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "target": "ts_625a5d57",
+          "relationship": "derived_from"
+        },
+        {
+          "source": "claim_ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "target": "query_1",
+          "relationship": "supports"
+        }
+      ]
+    }
+  },
+  "GUI_Response": {
+    "answer_text": "No significant change detected. Changed area: 0.0 m\u00b2, 0.0% of scene.",
+    "evidence_graph_nodes": [
+      {
+        "id": "query_1",
+        "type": "query",
+        "data": {
+          "text": "Find changes"
+        }
+      },
+      {
+        "id": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+        "type": "evidence",
+        "data": {
+          "evidence_id": "ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+          "claim": "No significant change detected. Changed area: 0.0 m\u00b2, 0.0% of scene.",
+          "evidence_type": "bitemporal_change_detection",
+          "spatial_region": null,
+          "modality": "sar",
+          "modality_contribution": {
+            "sar": 1.0
+          },
+          "timestamp": {
+            "t1": "unknown",
+            "t2": "unknown"
+          },
+          "source_model": "CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)",
+          "source_input": {
+            "image_1": null,
+            "image_2": null,
+            "query": "Find changes"
+          },
+          "confidence": 0.4921,
+          "processing_parameters": {
+            "model_identity": "CHANGE_MAMBA",
+            "claim_source": "synthesized",
+            "threshold": 0.5,
+            "semantic_enabled": true,
+            "change_score": 0.0
+          }
+        }
+      },
+      {
+        "id": "claim_ea8f2883-ab52-4ef5-9621-e0a997a4025d_mc4b_0",
+        "type": "claim",
+        "data": {
+          "text": "No significant change detected. Changed area: 0.0 m\u00b2, 0.0% of scene."
+        }
+      },
+      {
+        "id": "model_CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)",
+        "type": "model",
+        "data": {
+          "name": "CHANGE_MAMBA_TOOL (FALLBACK: LIGHTWEIGHT_CNN)"
+        }
+      },
+      {
+        "id": "modality_sar",
+        "type": "modality",
+        "data": {
+          "name": "sar"
+        }
+      },
+      {
+        "id": "ts_625a5d57",
+        "type": "timestamp",
+        "data": {
+          "value": {
+            "t1": "unknown",
+            "t2": "unknown"
+          }
+        }
+      }
+    ],
+    "verification_badges": [
+      "Single-source unverified evidence.",
+      "Fallback CNN Active"
+    ]
+  }
+}
