@@ -1,0 +1,38 @@
+{
+  "dataset": "BigEarthNet.txt",
+  "paired_samples": 1,
+  "train_samples": 1,
+  "validation_samples": 0,
+  "model_ids": {
+    "visual": "CROMA",
+    "text": "Qwen/Qwen3-4B-Instruct-2507"
+  },
+  "embedding_dimension": 512,
+  "projection_architecture": "Linear + L2 Normalization",
+  "temperature": 0.07,
+  "optimizer": "AdamW",
+  "learning_rate": 0.0001,
+  "batch_size": 1,
+  "epochs": 5,
+  "baseline_metrics": {
+    "i2t_r1": 1.0,
+    "i2t_r5": 1.0,
+    "t2i_r1": 1.0,
+    "t2i_r5": 1.0,
+    "mean_diagonal_sim": -0.030351942405104637,
+    "loss": -0.0
+  },
+  "final_metrics": {
+    "i2t_r1": 1.0,
+    "i2t_r5": 1.0,
+    "t2i_r1": 1.0,
+    "t2i_r5": 1.0,
+    "mean_diagonal_sim": -0.030351929366588593,
+    "loss": -0.0
+  },
+  "final_train_loss": 0.0,
+  "checkpoint": "/Users/sukesh/Desktop/satquery/backend/data/adaptation/checkpoints/bigearthnet_qwen3_croma_adapter.pt",
+  "reproducibility": {
+    "seed": 42
+  }
+}

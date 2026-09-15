@@ -184,18 +184,13 @@ def validate_preconditions(mc1_profile: Dict) -> Dict:
 
 class ChangeMambaAdapter:
     """
-    Wraps the ChangeMamba/LightweightCNN detector as an MC3-callable tool.
-
-    Usage:
-        adapter = ChangeMambaAdapter()
-        result = adapter.execute(mc1_profile, t1_tensor, t2_tensor, query)
+    Wraps the ChangeMamba pipeline as an MC3-callable tool.
+    Strictly reports MODEL_UNAVAILABLE if the real model cannot load.
     """
 
     def __init__(self):
-        self.backbone_name = config.BACKBONE
-        backbone = get_backbone(self.backbone_name)
-        self.detector = ChangeDetector(backbone)
-        self.detector.eval()
+        from .pipeline import TemporalPipeline
+        self.pipeline = TemporalPipeline()
 
     def execute(
         self,
@@ -207,17 +202,6 @@ class ChangeMambaAdapter:
     ) -> Dict:
         """
         Run the full MC4B pipeline.
-
-        Args:
-            mc1_profile: MC1 Structured Input Profile dict.
-            t1: (B, C, H, W) image tensor for time 1.
-            t2: (B, C, H, W) image tensor for time 2.
-            query: User's natural-language query (for captioning).
-            seed: Optional random seed for reproducibility.
-
-        Returns:
-            MC4B output dict matching the fixed I/O contract, or
-            a PRECONDITION_FAILED refusal dict.
         """
         # 1. Validate preconditions — refuse to run on bad input
         precond = validate_preconditions(mc1_profile)
@@ -228,62 +212,27 @@ class ChangeMambaAdapter:
         if seed is not None:
             torch.manual_seed(seed)
 
-        # 3. Run inference
-        det_result = self.detector.predict(t1, t2)
-        binary_mask = det_result["binary_mask"]
-        semantic_logits = det_result["semantic_logits"]
-        confidence = det_result["confidence"]
+        # 3. Pass tensors through the strict pipeline
+        result = self.pipeline.execute(mc1_profile, t1, t2)
 
-        # 4. Extract change semantics
-        semantics = extract_change_types(binary_mask, semantic_logits)
-        sem_result = semantics[0] if semantics else {
-            "has_change": False,
-            "changed_pixel_fraction": 0.0,
-            "change_types": [],
-            "primary_change": "no_change",
-            "description": "No change detected",
-        }
+        # 4. Map the Pipeline result back to the Tool Registry dictionary interface
+        if result.status != "SUCCESS":
+            return {
+                "passed": False,
+                "status": result.status,
+                "reason": result.reason,
+            }
 
-        # 5. Generate caption
-        caption_result = generate_change_caption(sem_result, query)
-
-        # 6. Localize change regions
-        regions = mask_to_regions(binary_mask)
-
-        # 7. Get geo info from MC1 profile
-        img1 = mc1_profile.get("image_1", {})
-        gsd_m = img1.get("gsd_m", 1.0)
-        crs = img1.get("crs", "EPSG:4326")
-
-        # Build a default affine transform from GSD if none provided
-        affine = mc1_profile.get("affine_transform")
-        if affine is None:
-            # Default: origin at (0, 0), GSD as pixel size, no rotation
-            affine = [gsd_m, 0, 0, 0, -gsd_m, 0]
-
-        geo_regions = regions_to_geojson(regions, affine, crs, gsd_m)
-
-        # 8. Compute statistics
-        stats = compute_change_statistics(binary_mask, gsd_m)
-
-        # 9. Build the fixed I/O contract output
-        change_score = sem_result["changed_pixel_fraction"]
-
+        # If success (which is impossible without CUDA right now)
         return {
             "status": "SUCCESS",
-            "change_map": binary_mask.cpu().numpy().tolist(),
-            "binary_change_mask": (binary_mask > 0.5).int().cpu().numpy().tolist(),
-            "change_score": round(change_score, 4),
-            "changed_region_coordinates": [
-                {"geometry": r["geometry"], "crs": r["crs"]}
-                for r in geo_regions
-            ],
-            "change_statistics": {
-                "changed_area_m2": stats["changed_area_m2"],
-                "changed_pixel_pct": stats["changed_pixel_pct"],
-            },
-            "model_confidence": round(confidence, 4),
-            "semantics": sem_result,
-            "caption": caption_result["caption"],
-            "source_model": f"CHANGE_MAMBA_TOOL (FALLBACK: {self.backbone_name.upper()})",
+            "change_map": result.raw_output.binary_mask,
+            "binary_change_mask": result.raw_output.binary_mask,
+            "change_score": 0.0,
+            "changed_region_coordinates": [],
+            "change_statistics": {},
+            "model_confidence": result.raw_output.confidence,
+            "semantics": {},
+            "caption": "",
+            "source_model": "CHANGE_MAMBA_TOOL",
         }

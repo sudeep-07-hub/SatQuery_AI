@@ -1,0 +1,23 @@
+[
+  {
+    "id": "vrsbench_001",
+    "task_type": "vqa",
+    "question": "What is the primary land cover?",
+    "img_path": "image1.tif",
+    "answer": "urban"
+  },
+  {
+    "id": "vrsbench_002",
+    "task_type": "captioning",
+    "prompt": "Describe the scene.",
+    "img_path": "image1.tif",
+    "reference": "A dense urban residential area."
+  },
+  {
+    "id": "vrsbench_003",
+    "task_type": "grounding",
+    "prompt": "Find the cars.",
+    "img_path": "image1.tif",
+    "reference": "[10, 20, 30, 40]"
+  }
+]

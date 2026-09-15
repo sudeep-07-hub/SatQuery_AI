@@ -1,0 +1,14 @@
+[
+  {
+    "id": "rsvqa_001",
+    "question": "Are there any buildings in the image?",
+    "img_path": "image1.tif",
+    "answer": "yes"
+  },
+  {
+    "id": "rsvqa_002",
+    "question": "Is there a river in the image?",
+    "img_path": "image1.tif",
+    "answer": "no"
+  }
+]

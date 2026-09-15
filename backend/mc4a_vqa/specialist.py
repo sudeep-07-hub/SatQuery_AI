@@ -17,17 +17,20 @@ class PaliGemmaVQASpecialist:
     strictly adheres to the MC4A contract schema.
     """
 
-    def __init__(self, quality_threshold: float = 0.5):
+    def __init__(self, quality_threshold: float = 0.5, execution_mode: str = "real"):
         self.quality_threshold = quality_threshold
+        self.execution_mode = execution_mode
+        self.is_mock = False
         
-        # Try loading real adapter; gracefully fall back to mock
-        try:
-            self.adapter = PaliGemmaVQAAdapter()
-            self.is_mock = False
-        except Exception as e:
-            logger.warning(f"Failed to load real PaliGemma adapter ({e}). Falling back to mock.")
+        if execution_mode == "fixture":
             self.adapter = MockPaliGemmaVQAAdapter()
             self.is_mock = True
+        else:
+            try:
+                self.adapter = PaliGemmaVQAAdapter()
+            except Exception as e:
+                logger.error(f"Failed to load real PaliGemma adapter ({e}).")
+                raise RuntimeError(f"MODEL_UNAVAILABLE: {e}")
 
     def run(
         self,

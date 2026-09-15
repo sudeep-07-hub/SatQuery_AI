@@ -1,0 +1,296 @@
+[
+  {
+    "sample_id": 771131,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542630"
+  },
+  {
+    "sample_id": 771132,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542693"
+  },
+  {
+    "sample_id": 771133,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542730"
+  },
+  {
+    "sample_id": 771134,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542762"
+  },
+  {
+    "sample_id": 771135,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542791"
+  },
+  {
+    "sample_id": 771136,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542820"
+  },
+  {
+    "sample_id": 771137,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542846"
+  },
+  {
+    "sample_id": 771138,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542873"
+  },
+  {
+    "sample_id": 771139,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542899"
+  },
+  {
+    "sample_id": 771140,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542926"
+  },
+  {
+    "sample_id": 771141,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542951"
+  },
+  {
+    "sample_id": 771142,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.542977"
+  },
+  {
+    "sample_id": 771143,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543003"
+  },
+  {
+    "sample_id": 771144,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543028"
+  },
+  {
+    "sample_id": 771145,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543054"
+  },
+  {
+    "sample_id": 771146,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543079"
+  },
+  {
+    "sample_id": 771147,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543104"
+  },
+  {
+    "sample_id": 771148,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543130"
+  },
+  {
+    "sample_id": 771149,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543157"
+  },
+  {
+    "sample_id": 771150,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543182"
+  },
+  {
+    "sample_id": 771151,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543207"
+  },
+  {
+    "sample_id": 771152,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543232"
+  },
+  {
+    "sample_id": 771153,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543257"
+  },
+  {
+    "sample_id": 771154,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543282"
+  },
+  {
+    "sample_id": 771155,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543306"
+  },
+  {
+    "sample_id": 771156,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543331"
+  },
+  {
+    "sample_id": 771157,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543356"
+  },
+  {
+    "sample_id": 771158,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543380"
+  },
+  {
+    "sample_id": 771159,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543404"
+  },
+  {
+    "sample_id": 771160,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543429"
+  },
+  {
+    "sample_id": 771161,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543453"
+  },
+  {
+    "sample_id": 771162,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543477"
+  },
+  {
+    "sample_id": 771163,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543502"
+  },
+  {
+    "sample_id": 771164,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543526"
+  },
+  {
+    "sample_id": 771165,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543551"
+  },
+  {
+    "sample_id": 771166,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543576"
+  },
+  {
+    "sample_id": 771167,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543602"
+  },
+  {
+    "sample_id": 771168,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543627"
+  },
+  {
+    "sample_id": 771169,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543652"
+  },
+  {
+    "sample_id": 771170,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543681"
+  },
+  {
+    "sample_id": 771171,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543706"
+  },
+  {
+    "sample_id": 771172,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543732"
+  },
+  {
+    "sample_id": 771173,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543757"
+  },
+  {
+    "sample_id": 771174,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543783"
+  },
+  {
+    "sample_id": 771175,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543808"
+  },
+  {
+    "sample_id": 771176,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543833"
+  },
+  {
+    "sample_id": 771177,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543858"
+  },
+  {
+    "sample_id": 771178,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543884"
+  },
+  {
+    "sample_id": 771179,
+    "rejection_reason": "Qwen3_failure: Insufficient physical memory for remote extraction",
+    "stage": "qwen_oom",
+    "timestamp": "2026-09-14T07:45:21.543909"
+  }
+]

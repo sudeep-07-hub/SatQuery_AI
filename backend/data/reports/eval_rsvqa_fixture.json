@@ -1,0 +1,41 @@
+{
+  "benchmark_id": "rsvqa",
+  "metrics": {
+    "exact_match": 0.0
+  },
+  "predictions": [
+    {
+      "benchmark_id": "RSVQA",
+      "sample_id": "rsvqa_001",
+      "task_type": "vqa",
+      "prediction": null,
+      "evidence_ids": [],
+      "execution_status": "PRECONDITION_FAILED",
+      "execution_mode": "fixture",
+      "model_backend": "qwen3_4b",
+      "model_id": "local_fixture",
+      "latency_ms": 0,
+      "error_code": "EXECUTION_FAILED",
+      "metadata": {}
+    },
+    {
+      "benchmark_id": "RSVQA",
+      "sample_id": "rsvqa_002",
+      "task_type": "vqa",
+      "prediction": null,
+      "evidence_ids": [],
+      "execution_status": "PRECONDITION_FAILED",
+      "execution_mode": "fixture",
+      "model_backend": "qwen3_4b",
+      "model_id": "local_fixture",
+      "latency_ms": 0,
+      "error_code": "EXECUTION_FAILED",
+      "metadata": {}
+    }
+  ],
+  "summary": "Evaluated 2 samples on rsvqa in fixture mode.",
+  "provenance": {
+    "execution_mode": "fixture",
+    "adapter_version": "1.0"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "benchmark_id": "cdvqa",
+  "metrics": {
+    "exact_match": 0.0
+  },
+  "predictions": [
+    {
+      "benchmark_id": "CDVQA",
+      "sample_id": "cdvqa_001",
+      "task_type": "change_vqa",
+      "prediction": null,
+      "evidence_ids": [],
+      "execution_status": "PRECONDITION_FAILED",
+      "execution_mode": "fixture",
+      "model_backend": "qwen3_4b",
+      "model_id": "local_fixture",
+      "latency_ms": 0,
+      "error_code": "EXECUTION_FAILED",
+      "metadata": {}
+    }
+  ],
+  "summary": "Evaluated 1 samples on cdvqa in fixture mode.",
+  "provenance": {
+    "execution_mode": "fixture",
+    "adapter_version": "1.0"
+  }
+}

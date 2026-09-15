@@ -6,7 +6,13 @@ class PaliGemmaVQAAdapter:
     """Unified Adapter for Single-Image Visual Question Answering (Track A)."""
 
     def __init__(self, model_id: str = "google/paligemma-3b-pt-224"):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            self.device = "mps"
+        else:
+            self.device = "cpu"
+            
         self.processor = AutoProcessor.from_pretrained(model_id)
         self.model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_id,

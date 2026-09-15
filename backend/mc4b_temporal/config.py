@@ -5,7 +5,7 @@ config.py — MC4B configuration: thresholds, feature flags, backbone selection.
 # ── Backbone Selection ────────────────────────────────────────────
 # Set to "changemamba" when CUDA hardware + mamba-ssm is available.
 # Default: "lightweight_cnn" (CPU-compatible stand-in)
-BACKBONE = "lightweight_cnn"
+BACKBONE = "changemamba"
 
 # ── Feature Flags ─────────────────────────────────────────────────
 ENABLE_CAPTIONER = False          # DeltaVLM-style change VQA/caption head

@@ -6,7 +6,9 @@ Phase 2: Task Classifier
 
 def classify_task(query: str, profile: dict) -> str:
     """
-    Classifies a natural-language query into a known task type.
+    [DEPRECATED] Classifies a natural-language query into a known task type.
+    This legacy keyword-based routing is superseded by Phase 2 (QueryIntelligence) 
+    and Phase 3 (AgentToolRegistry / QwenToolSelector).
     Must run in isolation (no imports from engine_registry).
     
     Precedence order for classification:
@@ -60,7 +62,8 @@ from .engine_registry import ENGINE_REGISTRY, adapt_profile
 
 def route_query(query: str, profile: dict) -> dict:
     """
-    Dispatcher. Wires Phase 1 registry to Phase 2 classifier.
+    [DEPRECATED] Dispatcher. Wires Phase 1 registry to Phase 2 classifier.
+    This logic is superseded by the new Agentic orchestration in Phase 3.
     """
     try:
         task_type = classify_task(query, profile)

@@ -1,0 +1,8 @@
+[
+  {
+    "sample_id": 771130,
+    "visual_feature_path": "/Users/sukesh/Desktop/satquery/backend/data/features/sample_771130.pt",
+    "text_feature_path": "/Users/sukesh/Desktop/satquery/backend/data/text_features/qwen3_text_771130.pt",
+    "status": "valid"
+  }
+]

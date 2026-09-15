@@ -1,0 +1,9 @@
+[
+  {
+    "id": "cdvqa_001",
+    "question": "What changed between the two dates?",
+    "img1_path": "image1.tif",
+    "img2_path": "image2.tif",
+    "answer": "A new building was constructed."
+  }
+]

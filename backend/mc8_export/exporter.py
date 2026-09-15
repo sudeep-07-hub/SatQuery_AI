@@ -36,7 +36,7 @@ def export_geojson(job: Dict, output_dir: str) -> str:
 def export_json_trace(job: Dict, output_dir: str) -> str:
     """Generate JSON execution trace."""
     filepath = os.path.join(output_dir, f"export_{job['job_id']}_trace.json")
-    result = job.get("result", {})
+    result = job.get("result") or {}
     answer_text = result.get("final_answer", "")
     verification_badges = list(result.get("caveats", []))
     
@@ -57,7 +57,8 @@ def export_json_trace(job: Dict, output_dir: str) -> str:
             },
             "GUI_Response": {
                 "answer_text": answer_text,
-                "evidence_graph_nodes": job.get("evidence_graph", {}).get("nodes", []),
+                "evidence_graph_nodes": (job.get("evidence_graph") or {}).get("nodes", []),
+                "evidence_graph_edges": (job.get("evidence_graph") or {}).get("edges", []),
                 "verification_badges": verification_badges
             }
         }, f, indent=2)
