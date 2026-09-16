@@ -1,3 +1,4 @@
+import os
 import pytest
 import asyncio
 from unittest.mock import patch, MagicMock
@@ -58,7 +59,7 @@ def test_qwen3_real_mode_instantiates_inference():
                     with patch("qwen.inference.Qwen3Inference.generate") as mock_generate:
                         mock_generate.return_value = {"status": "ok", "response": '{"answer": "A building", "evidence_ids": [], "uncertainty": "none"}'}
                         
-                        await execute_agentic_pipeline(job_id, [("test.tif", b"")], "What is here?", execution_mode="real")
+                        await execute_agentic_pipeline(job_id, [("test.tif", open(os.path.join(os.path.dirname(__file__), "fixtures", "test_geo1.tif"), "rb").read())], "What is here?", execution_mode="real", qwen_backend="transformers", planner_fallback="strict")
                     
                     # Verify Qwen3Inference was instantiated and loaded
                     assert mock_load.called, "Qwen3Inference.load() should be called"
@@ -93,12 +94,12 @@ def test_qwen3_real_mode_unavailable_safe_failure():
                 "image_1": {"filename": "img1.tif", "modality": "optical"}
             }
             
-            await execute_agentic_pipeline(job_id, [("test.tif", b"")], "What is here?", execution_mode="real")
+            await execute_agentic_pipeline(job_id, [("test.tif", open(os.path.join(os.path.dirname(__file__), "fixtures", "test_geo1.tif"), "rb").read())], "What is here?", execution_mode="real", qwen_backend="transformers", planner_fallback="strict")
             
             job = job_registry.get_job(job_id)
             # Should gracefully abort with MODEL_UNAVAILABLE
             assert job["result"]["execution_status"] == "MODEL_UNAVAILABLE"
-            assert "Qwen3-4B-Instruct-2507" in job["result"]["model_unavailable"]
+            assert any("Qwen3-4B-Instruct-2507" in m for m in job["result"]["model_unavailable"])
             assert "CUDA out of memory" in job["result"]["final_answer"]
             
     asyncio.run(run_test())

@@ -66,10 +66,15 @@ def export_json_trace(job: Dict, output_dir: str) -> str:
 
 def export_png_heatmap(job: Dict, output_dir: str) -> str:
     """Generate PNG heatmap overlay using PIL."""
+    # The change detector already rendered its georeferenced overlay; never overwrite it.
+    overlay = job.get("change_overlay_png")
+    if overlay and os.path.exists(overlay):
+        return overlay
+
     filepath = os.path.join(output_dir, f"export_{job['job_id']}_heatmap.png")
-    
+
     # If we don't have a change_map in result, create a blank transparent PNG
-    result = job.get("result", {})
+    result = job.get("result") or {}
     change_map = result.get("change_map")
     
     from PIL import Image
@@ -118,16 +123,33 @@ def export_pdf_report(job: Dict, output_dir: str) -> str:
         story.append(Paragraph(ans, styles['Normal']))
         story.append(Spacer(1, 12))
         
-        confidence = result.get("confidence", 0)
-        story.append(Paragraph(f"<b>Confidence Score:</b> {confidence * 100:.1f}%", styles['Normal']))
+        confidence = result.get("confidence") or 0
+        story.append(Paragraph(f"<b>Highest evidence confidence (uncalibrated):</b> {confidence * 100:.1f}%", styles['Normal']))
         story.append(Spacer(1, 12))
-        
+
+        planner = result.get("planner") or {}
+        if planner:
+            story.append(Paragraph(
+                "<b>Planner:</b> " + html.escape(", ".join(f"{k}={v}" for k, v in planner.items())),
+                styles['Normal']
+            ))
+            story.append(Spacer(1, 12))
+
         # Change Statistics
         stats = result.get("change_statistics")
         if stats:
             story.append(Paragraph("<b>Change Statistics:</b>", styles['Heading3']))
-            story.append(Paragraph(f"- Changed Area: {stats.get('changed_area_m2', 0):.2f} m²", styles['Normal']))
-            story.append(Paragraph(f"- Changed Pixels: {stats.get('changed_pixel_pct', 0) * 100:.2f}%", styles['Normal']))
+            if stats.get("changed_area_m2") is not None:
+                story.append(Paragraph(f"- Changed Area: {stats['changed_area_m2']:,.1f} m²", styles['Normal']))
+            story.append(Paragraph(f"- Changed Pixels: {stats.get('changed_pixel_pct', 0):.2f}% ({stats.get('region_count', 0)} regions)", styles['Normal']))
+            story.append(Paragraph(f"- Threshold: {stats.get('threshold')} {html.escape(str(stats.get('threshold_unit', '')))}", styles['Normal']))
+            story.append(Spacer(1, 12))
+
+        caveats = result.get("caveats") or []
+        if caveats:
+            story.append(Paragraph("<b>Caveats:</b>", styles['Heading3']))
+            for c in caveats:
+                story.append(Paragraph(f"- {html.escape(str(c))}", styles['Normal']))
             story.append(Spacer(1, 12))
         
         story.append(Paragraph("<b>Evidence Claims:</b>", styles['Heading3']))

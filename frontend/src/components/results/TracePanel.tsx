@@ -1,18 +1,22 @@
-import React from 'react';
-
 export interface TraceEntry {
   message: string;
   stage: string;
   timestamp: string;
-  details?: string[];
-  task_spec?: any;
+  details?: unknown;
+  error?: string;
   reason?: string;
-  failed?: any;
-  triggers?: string[];
+  failed?: unknown;
+  triggers?: unknown;
 }
 
 interface TracePanelProps {
   trace: TraceEntry[];
+}
+
+function asText(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
 }
 
 export default function TracePanel({ trace }: TracePanelProps) {
@@ -31,24 +35,18 @@ export default function TracePanel({ trace }: TracePanelProps) {
               <span className="trace-time">{new Date(entry.timestamp).toLocaleTimeString()}</span>
             </div>
             <div className="trace-message">{entry.message}</div>
-            
-            {entry.details && (
+
+            {Array.isArray(entry.details) && entry.details.length > 0 && (
               <div className="trace-details">
                 {entry.details.map((d, i) => (
-                  <div key={i} className="trace-detail-item">• {d}</div>
+                  <div key={i} className="trace-detail-item">• {asText(d)}</div>
                 ))}
               </div>
             )}
-            
-            {entry.reason && (
-              <div className="trace-reason">Reason: {entry.reason}</div>
-            )}
-            
-            {entry.triggers && (
-              <div className="trace-triggers">
-                Triggers: {entry.triggers.join(', ')}
-              </div>
-            )}
+
+            {entry.error && <div className="trace-reason">Error: {entry.error}</div>}
+            {entry.reason && <div className="trace-reason">Reason: {entry.reason}</div>}
+            {entry.triggers != null && <div className="trace-triggers">Triggers: {asText(entry.triggers)}</div>}
           </li>
         ))}
       </ul>

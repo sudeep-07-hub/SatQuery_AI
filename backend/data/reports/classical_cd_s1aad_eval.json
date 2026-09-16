@@ -1,0 +1,692 @@
+{
+  "dataset": "S1-AAD Change_detection (Sentinel-1, before/after/mask)",
+  "detector": "classical SAR log-ratio, threshold = max(Otsu, 3 dB), 5x5 smoothing, 3x3 opening, min region 20 px",
+  "pairs_evaluated": 113,
+  "pixel_micro": {
+    "precision": 0.064,
+    "recall": 0.2821,
+    "f1": 0.1044,
+    "iou": 0.0551
+  },
+  "mean_pair_iou": 0.0868,
+  "per_pair": [
+    {
+      "pair": "_ID_100.tif",
+      "gt_changed_px": 472,
+      "pred_changed_px": 1738,
+      "iou": 0.0802
+    },
+    {
+      "pair": "_ID_104.tif",
+      "gt_changed_px": 376,
+      "pred_changed_px": 447,
+      "iou": 0.2395
+    },
+    {
+      "pair": "_ID_105.tif",
+      "gt_changed_px": 334,
+      "pred_changed_px": 1412,
+      "iou": 0.0122
+    },
+    {
+      "pair": "_ID_1079.tif",
+      "gt_changed_px": 255,
+      "pred_changed_px": 526,
+      "iou": 0.1833
+    },
+    {
+      "pair": "_ID_1088.tif",
+      "gt_changed_px": 223,
+      "pred_changed_px": 3913,
+      "iou": 0.0
+    },
+    {
+      "pair": "_ID_1091.tif",
+      "gt_changed_px": 670,
+      "pred_changed_px": 6945,
+      "iou": 0.0806
+    },
+    {
+      "pair": "_ID_110.tif",
+      "gt_changed_px": 400,
+      "pred_changed_px": 324,
+      "iou": 0.1348
+    },
+    {
+      "pair": "_ID_1106.tif",
+      "gt_changed_px": 1014,
+      "pred_changed_px": 3582,
+      "iou": 0.0438
+    },
+    {
+      "pair": "_ID_113.tif",
+      "gt_changed_px": 368,
+      "pred_changed_px": 2044,
+      "iou": 0.0616
+    },
+    {
+      "pair": "_ID_1264.tif",
+      "gt_changed_px": 449,
+      "pred_changed_px": 522,
+      "iou": 0.0509
+    },
+    {
+      "pair": "_ID_1288.tif",
+      "gt_changed_px": 1491,
+      "pred_changed_px": 3446,
+      "iou": 0.0129
+    },
+    {
+      "pair": "_ID_1314.tif",
+      "gt_changed_px": 1439,
+      "pred_changed_px": 801,
+      "iou": 0.0636
+    },
+    {
+      "pair": "_ID_132.tif",
+      "gt_changed_px": 374,
+      "pred_changed_px": 7056,
+      "iou": 0.0371
+    },
+    {
+      "pair": "_ID_1327.tif",
+      "gt_changed_px": 988,
+      "pred_changed_px": 2097,
+      "iou": 0.0813
+    },
+    {
+      "pair": "_ID_1413.tif",
+      "gt_changed_px": 878,
+      "pred_changed_px": 1534,
+      "iou": 0.1835
+    },
+    {
+      "pair": "_ID_1416.tif",
+      "gt_changed_px": 874,
+      "pred_changed_px": 8900,
+      "iou": 0.0241
+    },
+    {
+      "pair": "_ID_1480.tif",
+      "gt_changed_px": 757,
+      "pred_changed_px": 3478,
+      "iou": 0.0649
+    },
+    {
+      "pair": "_ID_1485.tif",
+      "gt_changed_px": 652,
+      "pred_changed_px": 1287,
+      "iou": 0.0544
+    },
+    {
+      "pair": "_ID_1602.tif",
+      "gt_changed_px": 469,
+      "pred_changed_px": 9890,
+      "iou": 0.0089
+    },
+    {
+      "pair": "_ID_1616.tif",
+      "gt_changed_px": 959,
+      "pred_changed_px": 1150,
+      "iou": 0.0105
+    },
+    {
+      "pair": "_ID_1625.tif",
+      "gt_changed_px": 929,
+      "pred_changed_px": 3579,
+      "iou": 0.0382
+    },
+    {
+      "pair": "_ID_1626.tif",
+      "gt_changed_px": 716,
+      "pred_changed_px": 3410,
+      "iou": 0.0359
+    },
+    {
+      "pair": "_ID_1627.tif",
+      "gt_changed_px": 406,
+      "pred_changed_px": 2531,
+      "iou": 0.018
+    },
+    {
+      "pair": "_ID_1655.tif",
+      "gt_changed_px": 913,
+      "pred_changed_px": 8093,
+      "iou": 0.075
+    },
+    {
+      "pair": "_ID_1656.tif",
+      "gt_changed_px": 1387,
+      "pred_changed_px": 2715,
+      "iou": 0.0054
+    },
+    {
+      "pair": "_ID_1664.tif",
+      "gt_changed_px": 385,
+      "pred_changed_px": 3599,
+      "iou": 0.0862
+    },
+    {
+      "pair": "_ID_168.tif",
+      "gt_changed_px": 146,
+      "pred_changed_px": 1090,
+      "iou": 0.0274
+    },
+    {
+      "pair": "_ID_1689.tif",
+      "gt_changed_px": 259,
+      "pred_changed_px": 1035,
+      "iou": 0.0141
+    },
+    {
+      "pair": "_ID_1733.tif",
+      "gt_changed_px": 603,
+      "pred_changed_px": 10589,
+      "iou": 0.0085
+    },
+    {
+      "pair": "_ID_175.tif",
+      "gt_changed_px": 874,
+      "pred_changed_px": 2697,
+      "iou": 0.0647
+    },
+    {
+      "pair": "_ID_176.tif",
+      "gt_changed_px": 415,
+      "pred_changed_px": 1209,
+      "iou": 0.1608
+    },
+    {
+      "pair": "_ID_1781.tif",
+      "gt_changed_px": 306,
+      "pred_changed_px": 49,
+      "iou": 0.0534
+    },
+    {
+      "pair": "_ID_1794.tif",
+      "gt_changed_px": 490,
+      "pred_changed_px": 528,
+      "iou": 0.0
+    },
+    {
+      "pair": "_ID_1799.tif",
+      "gt_changed_px": 975,
+      "pred_changed_px": 2146,
+      "iou": 0.2564
+    },
+    {
+      "pair": "_ID_1807.tif",
+      "gt_changed_px": 553,
+      "pred_changed_px": 2089,
+      "iou": 0.0534
+    },
+    {
+      "pair": "_ID_1814.tif",
+      "gt_changed_px": 376,
+      "pred_changed_px": 1802,
+      "iou": 0.0
+    },
+    {
+      "pair": "_ID_1831.tif",
+      "gt_changed_px": 393,
+      "pred_changed_px": 8907,
+      "iou": 0.0229
+    },
+    {
+      "pair": "_ID_1860.tif",
+      "gt_changed_px": 1588,
+      "pred_changed_px": 3089,
+      "iou": 0.3655
+    },
+    {
+      "pair": "_ID_190.tif",
+      "gt_changed_px": 370,
+      "pred_changed_px": 968,
+      "iou": 0.0611
+    },
+    {
+      "pair": "_ID_191.tif",
+      "gt_changed_px": 514,
+      "pred_changed_px": 3197,
+      "iou": 0.0297
+    },
+    {
+      "pair": "_ID_192.tif",
+      "gt_changed_px": 601,
+      "pred_changed_px": 511,
+      "iou": 0.2153
+    },
+    {
+      "pair": "_ID_193.tif",
+      "gt_changed_px": 505,
+      "pred_changed_px": 492,
+      "iou": 0.044
+    },
+    {
+      "pair": "_ID_194.tif",
+      "gt_changed_px": 326,
+      "pred_changed_px": 656,
+      "iou": 0.2094
+    },
+    {
+      "pair": "_ID_196.tif",
+      "gt_changed_px": 1200,
+      "pred_changed_px": 1690,
+      "iou": 0.2533
+    },
+    {
+      "pair": "_ID_201.tif",
+      "gt_changed_px": 552,
+      "pred_changed_px": 2441,
+      "iou": 0.0789
+    },
+    {
+      "pair": "_ID_203.tif",
+      "gt_changed_px": 410,
+      "pred_changed_px": 732,
+      "iou": 0.2359
+    },
+    {
+      "pair": "_ID_204.tif",
+      "gt_changed_px": 811,
+      "pred_changed_px": 1809,
+      "iou": 0.0389
+    },
+    {
+      "pair": "_ID_221.tif",
+      "gt_changed_px": 249,
+      "pred_changed_px": 901,
+      "iou": 0.0599
+    },
+    {
+      "pair": "_ID_227.tif",
+      "gt_changed_px": 203,
+      "pred_changed_px": 372,
+      "iou": 0.0268
+    },
+    {
+      "pair": "_ID_2297.tif",
+      "gt_changed_px": 574,
+      "pred_changed_px": 3863,
+      "iou": 0.0066
+    },
+    {
+      "pair": "_ID_2323.tif",
+      "gt_changed_px": 714,
+      "pred_changed_px": 2377,
+      "iou": 0.0205
+    },
+    {
+      "pair": "_ID_2327.tif",
+      "gt_changed_px": 345,
+      "pred_changed_px": 1059,
+      "iou": 0.0892
+    },
+    {
+      "pair": "_ID_2328.tif",
+      "gt_changed_px": 612,
+      "pred_changed_px": 741,
+      "iou": 0.0764
+    },
+    {
+      "pair": "_ID_2349.tif",
+      "gt_changed_px": 964,
+      "pred_changed_px": 3904,
+      "iou": 0.0905
+    },
+    {
+      "pair": "_ID_2350.tif",
+      "gt_changed_px": 695,
+      "pred_changed_px": 161,
+      "iou": 0.0465
+    },
+    {
+      "pair": "_ID_2420.tif",
+      "gt_changed_px": 681,
+      "pred_changed_px": 1239,
+      "iou": 0.0256
+    },
+    {
+      "pair": "_ID_2424.tif",
+      "gt_changed_px": 1011,
+      "pred_changed_px": 140,
+      "iou": 0.0026
+    },
+    {
+      "pair": "_ID_2441.tif",
+      "gt_changed_px": 1428,
+      "pred_changed_px": 648,
+      "iou": 0.0354
+    },
+    {
+      "pair": "_ID_2450.tif",
+      "gt_changed_px": 1583,
+      "pred_changed_px": 3062,
+      "iou": 0.2118
+    },
+    {
+      "pair": "_ID_2468.tif",
+      "gt_changed_px": 1509,
+      "pred_changed_px": 707,
+      "iou": 0.0547
+    },
+    {
+      "pair": "_ID_2469.tif",
+      "gt_changed_px": 1039,
+      "pred_changed_px": 780,
+      "iou": 0.0751
+    },
+    {
+      "pair": "_ID_2484.tif",
+      "gt_changed_px": 1795,
+      "pred_changed_px": 1347,
+      "iou": 0.0215
+    },
+    {
+      "pair": "_ID_2508.tif",
+      "gt_changed_px": 1696,
+      "pred_changed_px": 395,
+      "iou": 0.0146
+    },
+    {
+      "pair": "_ID_2519.tif",
+      "gt_changed_px": 936,
+      "pred_changed_px": 6685,
+      "iou": 0.0264
+    },
+    {
+      "pair": "_ID_252.tif",
+      "gt_changed_px": 2663,
+      "pred_changed_px": 3834,
+      "iou": 0.11
+    },
+    {
+      "pair": "_ID_2523.tif",
+      "gt_changed_px": 1755,
+      "pred_changed_px": 2208,
+      "iou": 0.2307
+    },
+    {
+      "pair": "_ID_2528.tif",
+      "gt_changed_px": 899,
+      "pred_changed_px": 1078,
+      "iou": 0.1014
+    },
+    {
+      "pair": "_ID_2529.tif",
+      "gt_changed_px": 465,
+      "pred_changed_px": 934,
+      "iou": 0.0
+    },
+    {
+      "pair": "_ID_2544.tif",
+      "gt_changed_px": 961,
+      "pred_changed_px": 928,
+      "iou": 0.1178
+    },
+    {
+      "pair": "_ID_2551.tif",
+      "gt_changed_px": 1665,
+      "pred_changed_px": 2638,
+      "iou": 0.1039
+    },
+    {
+      "pair": "_ID_2555.tif",
+      "gt_changed_px": 662,
+      "pred_changed_px": 1715,
+      "iou": 0.1292
+    },
+    {
+      "pair": "_ID_2558.tif",
+      "gt_changed_px": 1492,
+      "pred_changed_px": 1425,
+      "iou": 0.0888
+    },
+    {
+      "pair": "_ID_258.tif",
+      "gt_changed_px": 329,
+      "pred_changed_px": 5893,
+      "iou": 0.0244
+    },
+    {
+      "pair": "_ID_272.tif",
+      "gt_changed_px": 278,
+      "pred_changed_px": 350,
+      "iou": 0.256
+    },
+    {
+      "pair": "_ID_2754.tif",
+      "gt_changed_px": 1235,
+      "pred_changed_px": 3371,
+      "iou": 0.0247
+    },
+    {
+      "pair": "_ID_2894.tif",
+      "gt_changed_px": 1030,
+      "pred_changed_px": 17628,
+      "iou": 0.0178
+    },
+    {
+      "pair": "_ID_32.tif",
+      "gt_changed_px": 483,
+      "pred_changed_px": 1261,
+      "iou": 0.252
+    },
+    {
+      "pair": "_ID_321.tif",
+      "gt_changed_px": 228,
+      "pred_changed_px": 1352,
+      "iou": 0.0174
+    },
+    {
+      "pair": "_ID_403.tif",
+      "gt_changed_px": 1705,
+      "pred_changed_px": 10049,
+      "iou": 0.1332
+    },
+    {
+      "pair": "_ID_433.tif",
+      "gt_changed_px": 1022,
+      "pred_changed_px": 215,
+      "iou": 0.0
+    },
+    {
+      "pair": "_ID_438.tif",
+      "gt_changed_px": 298,
+      "pred_changed_px": 7802,
+      "iou": 0.0048
+    },
+    {
+      "pair": "_ID_439.tif",
+      "gt_changed_px": 626,
+      "pred_changed_px": 574,
+      "iou": 0.0909
+    },
+    {
+      "pair": "_ID_442.tif",
+      "gt_changed_px": 489,
+      "pred_changed_px": 11435,
+      "iou": 0.017
+    },
+    {
+      "pair": "_ID_443.tif",
+      "gt_changed_px": 783,
+      "pred_changed_px": 223,
+      "iou": 0.007
+    },
+    {
+      "pair": "_ID_445.tif",
+      "gt_changed_px": 498,
+      "pred_changed_px": 275,
+      "iou": 0.0
+    },
+    {
+      "pair": "_ID_456.tif",
+      "gt_changed_px": 601,
+      "pred_changed_px": 10890,
+      "iou": 0.0139
+    },
+    {
+      "pair": "_ID_459.tif",
+      "gt_changed_px": 1170,
+      "pred_changed_px": 13992,
+      "iou": 0.005
+    },
+    {
+      "pair": "_ID_52.tif",
+      "gt_changed_px": 362,
+      "pred_changed_px": 16578,
+      "iou": 0.0103
+    },
+    {
+      "pair": "_ID_588.tif",
+      "gt_changed_px": 633,
+      "pred_changed_px": 338,
+      "iou": 0.1615
+    },
+    {
+      "pair": "_ID_59.tif",
+      "gt_changed_px": 763,
+      "pred_changed_px": 1127,
+      "iou": 0.4583
+    },
+    {
+      "pair": "_ID_593.tif",
+      "gt_changed_px": 822,
+      "pred_changed_px": 962,
+      "iou": 0.2707
+    },
+    {
+      "pair": "_ID_604.tif",
+      "gt_changed_px": 331,
+      "pred_changed_px": 584,
+      "iou": 0.4252
+    },
+    {
+      "pair": "_ID_614.tif",
+      "gt_changed_px": 772,
+      "pred_changed_px": 873,
+      "iou": 0.0558
+    },
+    {
+      "pair": "_ID_619.tif",
+      "gt_changed_px": 1112,
+      "pred_changed_px": 2072,
+      "iou": 0.0199
+    },
+    {
+      "pair": "_ID_620.tif",
+      "gt_changed_px": 786,
+      "pred_changed_px": 1180,
+      "iou": 0.0469
+    },
+    {
+      "pair": "_ID_622.tif",
+      "gt_changed_px": 644,
+      "pred_changed_px": 7772,
+      "iou": 0.0
+    },
+    {
+      "pair": "_ID_626.tif",
+      "gt_changed_px": 637,
+      "pred_changed_px": 2582,
+      "iou": 0.0492
+    },
+    {
+      "pair": "_ID_628.tif",
+      "gt_changed_px": 1428,
+      "pred_changed_px": 1381,
+      "iou": 0.1037
+    },
+    {
+      "pair": "_ID_629.tif",
+      "gt_changed_px": 450,
+      "pred_changed_px": 3686,
+      "iou": 0.0389
+    },
+    {
+      "pair": "_ID_632.tif",
+      "gt_changed_px": 671,
+      "pred_changed_px": 2843,
+      "iou": 0.002
+    },
+    {
+      "pair": "_ID_644.tif",
+      "gt_changed_px": 713,
+      "pred_changed_px": 1969,
+      "iou": 0.0592
+    },
+    {
+      "pair": "_ID_733.tif",
+      "gt_changed_px": 254,
+      "pred_changed_px": 6395,
+      "iou": 0.0038
+    },
+    {
+      "pair": "_ID_736.tif",
+      "gt_changed_px": 906,
+      "pred_changed_px": 5812,
+      "iou": 0.0785
+    },
+    {
+      "pair": "_ID_758.tif",
+      "gt_changed_px": 476,
+      "pred_changed_px": 4235,
+      "iou": 0.0943
+    },
+    {
+      "pair": "_ID_761.tif",
+      "gt_changed_px": 430,
+      "pred_changed_px": 146,
+      "iou": 0.0435
+    },
+    {
+      "pair": "_ID_847.tif",
+      "gt_changed_px": 729,
+      "pred_changed_px": 18848,
+      "iou": 0.0293
+    },
+    {
+      "pair": "_ID_880.tif",
+      "gt_changed_px": 1170,
+      "pred_changed_px": 18375,
+      "iou": 0.052
+    },
+    {
+      "pair": "_ID_882.tif",
+      "gt_changed_px": 535,
+      "pred_changed_px": 21162,
+      "iou": 0.0086
+    },
+    {
+      "pair": "_ID_903.tif",
+      "gt_changed_px": 611,
+      "pred_changed_px": 2145,
+      "iou": 0.0151
+    },
+    {
+      "pair": "_ID_921.tif",
+      "gt_changed_px": 1154,
+      "pred_changed_px": 1371,
+      "iou": 0.3656
+    },
+    {
+      "pair": "_ID_940.tif",
+      "gt_changed_px": 564,
+      "pred_changed_px": 1270,
+      "iou": 0.1217
+    },
+    {
+      "pair": "_ID_941.tif",
+      "gt_changed_px": 1295,
+      "pred_changed_px": 688,
+      "iou": 0.3246
+    },
+    {
+      "pair": "_ID_956.tif",
+      "gt_changed_px": 1815,
+      "pred_changed_px": 1518,
+      "iou": 0.4586
+    }
+  ]
+}

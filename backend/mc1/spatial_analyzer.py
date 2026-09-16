@@ -10,6 +10,16 @@ def get_footprint(meta: dict):
         return box(bounds.left, bounds.bottom, bounds.right, bounds.top)
     return None
 
+def reproject_footprint(footprint, src_crs: str, dst_crs: str):
+    """Reproject a shapely footprint polygon between CRSs (returns None on failure)."""
+    try:
+        from pyproj import Transformer
+        from shapely.ops import transform as shapely_transform
+        transformer = Transformer.from_crs(src_crs, dst_crs, always_xy=True)
+        return shapely_transform(transformer.transform, footprint)
+    except Exception:
+        return None
+
 def verify_crs(meta1: dict, meta2: dict) -> tuple[bool, str]:
     """
     Step 5: Verify CRS of two images. 

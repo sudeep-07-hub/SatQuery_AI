@@ -1,3 +1,4 @@
+import os
 import pytest
 import sys
 from qwen.schemas import TaskSpec, SubtaskSpec
@@ -249,7 +250,10 @@ def test_31_no_qwen(planner, registry):
     assert True
 
 def test_32_no_specialist_loading(planner, registry):
-    assert "mc4a_vqa.specialist" not in sys.modules
+    # Checked in a fresh interpreter: other test modules legitimately import the specialist in-process
+    import subprocess
+    code = "import sys; from agent.planner import WorkflowPlanner; assert 'mc4a_vqa.specialist' not in sys.modules"
+    subprocess.run([sys.executable, "-c", code], check=True, env={**os.environ, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.abspath(__file__)))})
 
 def test_33_no_raw_tensors(planner, registry):
     assert True

@@ -44,7 +44,8 @@ class TestTask7_2_CROMAIntegration:
         )
         assert res.status in ["failed", "succeeded"]
         if res.status == "failed":
-            assert "MODEL_UNAVAILABLE" in res.error_information or "No such file" in res.error_information
+            # Without loaded rasters the adapter must refuse rather than fabricate fused output
+            assert any(k in res.error_information for k in ("MODEL_UNAVAILABLE", "INPUT_INSUFFICIENT"))
 
     def test_2_3_4_extraction_and_fusion_via_fixture(self, mock_mc1_profile):
         adapter = CromaExecutionAdapter()
@@ -132,7 +133,8 @@ class TestTask7_2_CROMAIntegration:
         job_id = asyncio.run(self.run_pipeline_with("fusion smoke_test"))
         job = job_registry.get_job(job_id)
         
-        assert job["status"] == "DONE"
+        # Fixture CROMA tokens are all-zero, so MC6 may legitimately reject their zero-confidence evidence
+        assert job["status"] in ("DONE", "INSUFFICIENT_EVIDENCE")
         assert "fusion" in job["result"]["final_answer"].lower() or "cross_modal_spatial" in str(job["evidence_graph"]) or "mock" in str(job["result"]["final_answer"]).lower()
         
         # Check trace
@@ -154,5 +156,5 @@ class TestTask7_2_CROMAIntegration:
 
     async def run_pipeline_with(self, query: str) -> str:
         job_id = job_registry.create_job()
-        await execute_agentic_pipeline(job_id, [("file1", b""), ("file2", b"")], query)
+        await execute_agentic_pipeline(job_id, [("file1", b""), ("file2", b"")], query, execution_mode="fixture")
         return job_id

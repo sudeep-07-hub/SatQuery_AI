@@ -1,3 +1,4 @@
+import os
 import pytest
 from agent.schemas import ToolSpec
 from qwen.schemas import ObservationRequirement
@@ -36,11 +37,11 @@ def test_3_lookup():
 def test_4_list_deterministic():
     registry = setup_default_registry()
     tools = registry.list_capabilities()
-    assert len(tools) == 3
+    assert len(tools) == 4
     # Check alphabetical ordering based on tool_id
-    assert tools[0].tool_id == "optical_sar_fusion"
-    assert tools[1].tool_id == "single_image_vqa"
-    assert tools[2].tool_id == "temporal_change_analysis"
+    assert [t.tool_id for t in tools] == [
+        "classical_change_detection", "optical_sar_fusion", "single_image_vqa", "temporal_change_analysis"
+    ]
 
 def test_5_task_compatibility_vqa():
     registry = setup_default_registry()
@@ -63,14 +64,12 @@ def test_7_task_compatibility_grounding():
 def test_8_task_compatibility_change_detection():
     registry = setup_default_registry()
     tools = registry.find_by_task("change_detection")
-    assert len(tools) == 1
-    assert tools[0].tool_id == "temporal_change_analysis"
+    assert [t.tool_id for t in tools] == ["classical_change_detection", "temporal_change_analysis"]
 
 def test_9_task_compatibility_change_vqa():
     registry = setup_default_registry()
     tools = registry.find_by_task("change_vqa")
-    assert len(tools) == 1
-    assert tools[0].tool_id == "temporal_change_analysis"
+    assert [t.tool_id for t in tools] == ["classical_change_detection", "temporal_change_analysis"]
 
 def test_10_task_compatibility_cross_modal():
     registry = setup_default_registry()
@@ -125,7 +124,7 @@ def test_18_no_model_loading():
     # We do this in a subprocess to isolate from pytest's own conftest imports
     import subprocess
     code = "import sys; from agent.default_tools import setup_default_registry; setup_default_registry(); assert 'mc4a_vqa.specialist' not in sys.modules, 'Specialist was loaded'"
-    subprocess.run([sys.executable, "-c", code], check=True, env={"PYTHONPATH": "backend"})
+    subprocess.run([sys.executable, "-c", code], check=True, env={**os.environ, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.abspath(__file__)))})
 
 def test_19_no_qwen_dependency():
     registry = setup_default_registry()

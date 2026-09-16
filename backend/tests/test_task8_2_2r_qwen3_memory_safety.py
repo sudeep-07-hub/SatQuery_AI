@@ -1,3 +1,4 @@
+import os
 import pytest
 import asyncio
 from unittest.mock import patch, MagicMock
@@ -76,7 +77,7 @@ def test_qwen3_single_instance_lifecycle():
                     with patch("qwen.inference.Qwen3Inference.generate") as mock_generate:
                         mock_generate.return_value = {"status": "ok", "response": '{"answer": "A building", "evidence_ids": [], "uncertainty": "none"}'}
                         
-                        await execute_agentic_pipeline(job_id, [("test.tif", b"")], "What is here?", execution_mode="real")
+                        await execute_agentic_pipeline(job_id, [("test.tif", open(os.path.join(os.path.dirname(__file__), "fixtures", "test_geo1.tif"), "rb").read())], "What is here?", execution_mode="real", qwen_backend="transformers", planner_fallback="strict")
                     
                     # INVARIANT 1: Instantiated at most once
                     assert init_calls == 1, f"Qwen3Inference instantiated {init_calls} times instead of 1."
@@ -121,7 +122,7 @@ def test_qwen3_explicit_unload():
             
             # Intentionally cause an error to verify finally block unloads
             with patch("job_manager.QueryIntelligencePipeline.process_query", side_effect=Exception("Trigger failure")):
-                await execute_agentic_pipeline(job_id, [("test.tif", b"")], "What is here?", execution_mode="real")
+                await execute_agentic_pipeline(job_id, [("test.tif", open(os.path.join(os.path.dirname(__file__), "fixtures", "test_geo1.tif"), "rb").read())], "What is here?", execution_mode="real", qwen_backend="transformers", planner_fallback="strict")
                 
                 assert mock_load.called, "Model should be loaded"
                 assert mock_unload.called, "Model MUST be unloaded in the finally block"

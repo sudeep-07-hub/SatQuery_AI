@@ -58,6 +58,6 @@ def test_temporal_analyzer():
     # Cross modal
     assert determine_temporal_relationship(meta1, meta2, "optical", "sar") == "cross_modal"
     
-    # Multi temporal
+    # Different dates, same modality (FIX-1.2 contract name)
     meta3 = {"acquisition_date": "2024-11-18 10:00:00"}
-    assert determine_temporal_relationship(meta1, meta3, "optical", "optical") == "multi_temporal"
+    assert determine_temporal_relationship(meta1, meta3, "optical", "optical") == "bi_temporal"

@@ -141,3 +141,21 @@ Regression check added: None (manual verification required).
 Root cause: `mc8_export/exporter.py` was attempting to construct a `geojson.FeatureCollection` by directly appending raw spatial region dictionaries (Geometries) instead of wrapping them in `geojson.Feature()` objects. Because PaliGemma returns an entire bounding box polygon, it triggered an `AttributeError` during `feature_collection.is_valid` validation, crashing the VQA trace generation with an "Internal error" immediately after "DONE".
 Fix: Updated `export_geojson` in `mc8_export/exporter.py` to wrap `spatial_region` inside a `geojson.Feature(geometry=region, properties={...})` object before appending it to the feature collection.
 Regression check added: Static verification of `mc8_export/exporter.py` and local manual test of `geojson` module execution.
+
+[WEB-APP PHASE 0] [INVENTORY] Home + Assistant shell — frontend and contract audit (2026-09-17, no code changes)
+Routes: none. Single-page `App.tsx`; no router dependency. `?job=<id>` is read via URLSearchParams/history.replaceState.
+Navbar: no component; header markup is inline in `App.tsx` (`.app-header`).
+Design tokens: `frontend/src/index.css` `:root` / `[data-theme="dark"]` (--primary #F2600C / #FF7A24, IBM Plex Sans/Mono via Google Fonts). Theme toggle is not persisted.
+Pre-existing token drift found (not introduced by this phase): variables used but never defined: --border-light, --error-bg, --shadow-sm, --text-tertiary. Hard-coded hex values outside the token blocks: #ef4444 (x6), #fff, #6366f1, #3b82f6, #8b5cf6, #d946ef, #f59e0b, #10b981, #06b6d4, #7c5cfc (header logo gradient), #a5b4fc, #6ee7b7; in TSX: BeforeAfterViewer #3b82f6/#facc15/#9ca3af (added in the Task 9 map rewrite), TestHarness #8bb/#cde.
+Query flow: POST /api/query (multipart files + query) → job_id; poll /status, /trace, /result, /evidence_graph every 1.5 s. One completed payload, no streaming.
+Session/history API: none (FastAPI `main.py` exposes validate, query, system, jobs/{id}/status|result|trace|evidence_graph|structured_trace|preview|export). Jobs live in an in-memory registry.
+localStorage: not used anywhere yet.
+Env var convention: `VITE_API_BASE` (App.tsx, default http://localhost:8000). No .env files.
+Collapse pattern to reuse: ProfilePanel JSON viewer (`json-viewer__header` + `json-viewer__toggle--open`).
+Unused/dead frontend files: ProfilePanel.tsx, TestHarness.tsx (not imported), results/JobStatus.tsx (0 bytes).
+Brand assets: `public/favicon.svg`, `public/icons.svg` and `src/assets/hero.png` are Vite template assets; there is no SatQuery logo mark. `icons.svg` contains a `github-icon` symbol.
+Build: `npm run build` = `tsc -b && vite build` → `dist/` (passes). `npm run lint` (oxlint) does not run on Node v20.18.0. No vercel.json / netlify.toml / _redirects.
+Contract discrepancies vs. the build brief: backend is FastAPI (not Flask); `generate_dynamic_json` does not exist; `calibrated_confidence` does not exist (MC6.2 not built); there is no top-level `spatial_evidence.type` in the job result. Spatial output is `result.change_overlay` + `result.observations[*].bounds_wgs84` + per-evidence `spatial_region` (GeoJSON or null) with `processing_parameters.spatial_region_is_full_image`. The real trace data is `result.agent_state.execution_trace` (controller events), GET /trace (progress stages incl. `task_spec`, `details`), `result.verification_result` and /structured_trace (evidence objects + graph).
+Deployment blockers found: CORS only allows http://localhost|127.0.0.1 origins; the backend currently runs only on this Mac (Ollama + local weights); an HTTPS Vercel/Netlify page cannot call an http:// backend (mixed content).
+Regression check added: None (inventory only).
+Verified by: static inspection of frontend/src, backend/main.py, job_manager.py; live GET /api/jobs/{id}/result|trace|structured_trace on the running server.

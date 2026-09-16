@@ -1,9 +1,10 @@
 from typing import List
 from fastapi import UploadFile
+from shapely.geometry import mapping as shapely_mapping
 from .format_validator import validate_format
 from .metadata_extractor import extract_metadata
 from .classifier import EvidenceBasedClassifier, assess_quality, assess_conditions
-from .spatial_analyzer import verify_crs, get_footprint, calculate_overlap, calculate_coregistration
+from .spatial_analyzer import verify_crs, get_footprint, calculate_overlap, calculate_coregistration, reproject_footprint
 from .temporal_analyzer import determine_temporal_relationship
 from .schemas import (
     ObservationProfile,
@@ -18,6 +19,15 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
     """
     Executes the MC1 validation pipeline.
     Constructs a strongly typed ObservationProfile and returns its legacy dictionary representation.
+    """
+    profile = await run_mc1_profile(files, query)
+    return profile.to_legacy_dict(query)
+
+
+async def run_mc1_profile(files: List[UploadFile], query: str) -> RequestObservationProfile:
+    """
+    Executes the MC1 validation pipeline and returns the strongly typed RequestObservationProfile
+    (keeps per-observation timestamps and compatibility details that the legacy dict drops).
     """
     warnings = []
     image_count = len(files)
@@ -68,14 +78,18 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
         footprint = get_footprint(meta)
         footprints.append(footprint)
         
+        transform = meta.get("transform")
+        if transform is not None and len(transform) >= 6:
+            transform = [float(v) for v in list(transform)[:6]]  # rasterio Affine → [a, b, c, d, e, f]
+        bounds = meta.get("bounds")
         spatial_prof = SpatialProfile(
             crs=meta.get("crs"),
-            bounds=meta.get("bounds"),
-            footprint=footprint,
+            bounds=[float(v) for v in bounds] if isinstance(bounds, (tuple, list)) else None,
+            footprint=shapely_mapping(footprint) if footprint is not None else None,
             width=meta.get("width"),
             height=meta.get("height"),
             gsd_m=round(meta.get("gsd_m"), 2) if meta.get("gsd_m") else None,
-            transform=meta.get("transform")
+            transform=transform if meta.get("crs") else None
         )
         
         sensor_prof = SensorProfile(
@@ -112,27 +126,43 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
     spatial_overlap = None
     coregistration_score = None
     relationship = "unknown"
+    alignment = None
 
     if image_count == 2:
         # 5: CRS Verification
         crs_match, crs_warn = verify_crs(metas[0], metas[1])
         if not crs_match:
             warnings.append(crs_warn)
-            
+
+        # A CRS mismatch is not fatal: bring footprint 2 into CRS 1 before comparing
+        if not crs_match and metas[0].get("crs") and metas[1].get("crs") and footprints[1] is not None:
+            footprints[1] = reproject_footprint(footprints[1], metas[1]["crs"], metas[0]["crs"])
+
         # 8 & 9: Overlap & Co-registration
-        if crs_match and footprints[0] and footprints[1]:
+        if metas[0].get("crs") and metas[1].get("crs") and footprints[0] and footprints[1]:
             overlap = calculate_overlap(footprints[0], footprints[1])
             coreg = calculate_coregistration(footprints[0], footprints[1])
             spatial_overlap = round(overlap, 2) if overlap is not None else None
             coregistration_score = coreg
-            
+            alignment = "georeferenced"
+
             if spatial_overlap is not None and spatial_overlap <= 0.0:
                 warnings.append("Images have no spatial overlap. Cannot process as a pair.")
+        elif (
+            not metas[0].get("crs") and not metas[1].get("crs")
+            and metas[0].get("width") and metas[0].get("width") == metas[1].get("width")
+            and metas[0].get("height") == metas[1].get("height")
+        ):
+            # Plain images of identical size: overlap cannot be measured, only assumed.
+            alignment = "assumed_pixel_aligned"
+            warnings.append(
+                "Images are not georeferenced; overlap cannot be measured. "
+                "They have identical dimensions and are ASSUMED to be pixel-aligned."
+            )
         else:
+            alignment = "unknown"
             warnings.append("Could not compute spatial overlap/co-registration due to missing CRS or footprints.")
-            spatial_overlap = 1.0
-            coregistration_score = 1.0
-            
+
         # 10: Temporal Relationship
         rel = determine_temporal_relationship(metas[0], metas[1], modalities[0], modalities[1])
         relationship = rel
@@ -147,7 +177,8 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
         coreg_score=coregistration_score,
         relationship=relationship
     )
-    
+    comp_prof.factors["alignment"] = alignment
+
     # Merge warnings
     warnings.extend(comp_prof.warnings)
     warnings.extend(comp_prof.hard_failures)
@@ -165,4 +196,4 @@ async def run_mc1_pipeline(files: List[UploadFile], query: str) -> dict:
         compatibility=comp_prof
     )
     
-    return request_profile.to_legacy_dict(query)
+    return request_profile

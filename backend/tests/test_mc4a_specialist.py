@@ -32,7 +32,12 @@ def test_mc4a_contract():
     assert res["textual_answer"] == "wheat"  # from mock deterministic responses
     assert res["domain_mismatch_flag"] == False
     assert res["model_confidences"]["paligemma_vqa"] == 0.95
-    assert res["spatial_evidence"] is not None
+    # No footprint in the profile → no spatial evidence (a placeholder polygon must not be invented)
+    assert res["spatial_evidence"] is None
+
+    footprint = {"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]}
+    res = specialist.run(image, query, {**mc1_profile, "footprint": footprint}, mc2_task_spec)
+    assert res["spatial_evidence"] == footprint
 
 def test_modality_mismatch():
     specialist = PaliGemmaVQASpecialist()

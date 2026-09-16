@@ -32,15 +32,6 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const METADATA_FIELDS = [
-  { key: 'modality', label: 'Modality' },
-  { key: 'sensor', label: 'Sensor' },
-  { key: 'gsd', label: 'GSD' },
-  { key: 'crs', label: 'CRS' },
-  { key: 'date', label: 'Acq. Date' },
-  { key: 'quality', label: 'Quality' },
-];
-
 export type { UploadedFile };
 
 export default function UploadZone({ files, onFilesChange, error, onError }: UploadZoneProps) {
@@ -192,13 +183,8 @@ export default function UploadZone({ files, onFilesChange, error, onError }: Upl
                     <div className="file-card__size">{formatSize(f.file.size)}</div>
                   </div>
 
-                  <div className="file-card__meta">
-                    {METADATA_FIELDS.map((m) => (
-                      <div className="meta-item" key={m.key}>
-                        <span className="meta-item__label">{m.label}</span>
-                        <span className="meta-item__value">—</span>
-                      </div>
-                    ))}
+                  <div className="file-card__role">
+                    Image {idx + 1}{files.length === 2 ? (idx === 0 ? ' · before' : ' · after') : ''}
                   </div>
                 </div>
               ))}

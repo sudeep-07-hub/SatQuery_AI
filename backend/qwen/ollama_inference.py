@@ -23,11 +23,16 @@ class OllamaQwen3Inference:
             return
             
         try:
+            tags = requests.get(f"{self.endpoint}/api/tags", timeout=5)
+            tags.raise_for_status()
+            available = {m.get("name") for m in tags.json().get("models", [])}
+            if self.model_name not in available:
+                raise RuntimeError(f"model '{self.model_name}' is not pulled (available: {sorted(available)})")
             # A dummy request to load the model into memory
             response = requests.post(
                 f"{self.endpoint}/api/generate",
-                json={"model": self.model_name, "prompt": "", "stream": False, "keep_alive": "5m"},
-                timeout=30
+                json={"model": self.model_name, "prompt": "", "stream": False, "keep_alive": "15m"},
+                timeout=120
             )
             response.raise_for_status()
             self._is_loaded = True
@@ -85,6 +90,9 @@ class OllamaQwen3Inference:
                     ],
                     "format": "json",
                     "stream": False,
+                    # Structured JSON tasks do not need Qwen3's reasoning trace; skipping it keeps latency demo-friendly
+                    "think": False,
+                    "keep_alive": "15m",
                     "options": {
                         "temperature": 0.0,
                         "num_predict": max(2048, max_new_tokens)
@@ -94,9 +102,7 @@ class OllamaQwen3Inference:
             )
             res.raise_for_status()
             data = res.json()
-            
-            print(f"DEBUG OLLAMA JSON: {json.dumps(data)}")
-            
+
             # The chat endpoint returns the message in data["message"]["content"]
             response_text = data.get("message", {}).get("content", "").strip()
             

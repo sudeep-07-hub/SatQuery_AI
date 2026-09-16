@@ -62,28 +62,11 @@ class PaliGemmaVQASpecialist:
             "bounding_boxes": None,
             "segmentation_masks": None,
             "model_confidences": None,
-            "spatial_evidence": mc1_profile.get("footprint", None), # Will derive from affine + dimensions if possible
+            # PaliGemma answers about the whole image; the only honest spatial support is the
+            # image footprint (WGS84) when the caller could compute one, otherwise none.
+            "spatial_evidence": mc1_profile.get("footprint", None),
             "domain_mismatch_flag": False,
         }
-
-        # Handle full image footprint for spatial_evidence
-        if not output["spatial_evidence"]:
-            gsd_m = img_meta.get("gsd_m", 1.0)
-            crs = img_meta.get("crs", "EPSG:4326")
-            affine = mc1_profile.get("affine_transform", [gsd_m, 0, 0, 0, -gsd_m, 0])
-            # Just create a mock bounding box to represent the footprint
-            output["spatial_evidence"] = {
-                "type": "Polygon",
-                "coordinates": [
-                    [
-                        [affine[2], affine[5]],
-                        [affine[2] + gsd_m * 100, affine[5]],
-                        [affine[2] + gsd_m * 100, affine[5] - gsd_m * 100],
-                        [affine[2], affine[5] - gsd_m * 100],
-                        [affine[2], affine[5]]
-                    ]
-                ]
-            }
 
         # Quality Gate
         # Assuming quality object has optical or sar keys
@@ -109,7 +92,7 @@ class PaliGemmaVQASpecialist:
 
         # Run inference
         try:
-            adapter_res = self.adapter.predict(image_input, query)
+            adapter_res = self.adapter.predict(image_input, query, task="caption" if caption_requested else "vqa")
         except Exception as e:
             output["blocked_reason"] = f"inference_failed: {e}"
             return output

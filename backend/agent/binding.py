@@ -10,6 +10,11 @@ class ObservationBinder:
     Produces a Bound ToolCall if hard constraints and semantic roles are satisfied.
     """
     
+    def __init__(self, assume_upload_order: bool = False):
+        # When True and acquisition dates are missing, the first uploaded observation is treated as
+        # "before" and the second as "after". The assumption is always reported as a binding warning.
+        self.assume_upload_order = assume_upload_order
+
     def bind(self, call: ToolCall, requirement: ObservationRequirement, profile: RequestObservationProfile) -> BindingResult:
         warnings = list(profile.warnings)
         if profile.compatibility:
@@ -89,8 +94,11 @@ class ObservationBinder:
             )
 
         # 5. Spatial Relationship (Shared area / Co-registration)
+        alignment = profile.compatibility.factors.get("alignment") if profile.compatibility else None
         if requirement.shared_area_required:
-            if profile.spatial_overlap is None or profile.spatial_overlap <= 0.0:
+            if profile.spatial_overlap is None and alignment == "assumed_pixel_aligned":
+                warnings.append("Shared area assumed: images are not georeferenced but have identical dimensions.")
+            elif profile.spatial_overlap is None or profile.spatial_overlap <= 0.0:
                 failed_constraints.append("Shared spatial area required but no overlap exists")
                 return BindingResult(
                     status="INCOMPATIBLE",
@@ -170,7 +178,13 @@ class ObservationBinder:
             t1 = obs1.temporal.get("timestamp") if obs1.temporal else None
             t2 = obs2.temporal.get("timestamp") if obs2.temporal else None
             
-            if not t1 or not t2:
+            if (not t1 or not t2) and self.assume_upload_order:
+                before_obs, after_obs = obs1, obs2
+                warnings.append(
+                    f"Acquisition dates missing; ASSUMED upload order: {obs1.observation_id} = before, "
+                    f"{obs2.observation_id} = after."
+                )
+            elif not t1 or not t2:
                 unresolved_roles = ["before", "after"]
                 return BindingResult(
                     status="AMBIGUOUS",
@@ -180,7 +194,7 @@ class ObservationBinder:
                     unresolved_roles=unresolved_roles
                 )
                 
-            if t1 < t2:
+            elif t1 < t2:
                 before_obs, after_obs = obs1, obs2
             elif t1 > t2:
                 before_obs, after_obs = obs2, obs1

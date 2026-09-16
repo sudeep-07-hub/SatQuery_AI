@@ -1,3 +1,4 @@
+import os
 import pytest
 import sys
 from agent.schemas import ToolCall
@@ -209,7 +210,10 @@ def test_25_no_qwen():
     assert True
 
 def test_26_no_specialist_loading():
-    assert "mc4a_vqa.specialist" not in sys.modules
+    # Checked in a fresh interpreter: other test modules legitimately import the specialist in-process
+    import subprocess
+    code = "import sys; from agent.binding import ObservationBinder; assert 'mc4a_vqa.specialist' not in sys.modules"
+    subprocess.run([sys.executable, "-c", code], check=True, env={**os.environ, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.abspath(__file__)))})
 
 def test_27_mc1_authority():
     assert True

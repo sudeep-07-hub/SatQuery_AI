@@ -53,8 +53,9 @@ def test_scenario_c_cross_modal():
     asyncio.run(execute_agentic_pipeline(job_id, files, query, execution_mode="fixture"))
     
     job = job_registry.get_job(job_id)
-    assert job["status"] in ["DONE", "MODEL_UNAVAILABLE"]
-    assert_traces(job, ["OBSERVATION_BINDING", "AGENTIC_EXECUTION", "ANSWER_SYNTHESIS"])
+    # Fixture CROMA tokens are all-zero, so MC6 may legitimately reject their zero-confidence evidence
+    assert job["status"] in ["DONE", "MODEL_UNAVAILABLE", "INSUFFICIENT_EVIDENCE"]
+    assert_traces(job, ["OBSERVATION_BINDING", "AGENTIC_EXECUTION", "VERIFICATION", "ANSWER_SYNTHESIS"])
     if job["status"] == "DONE":
         nodes = job["evidence_graph"].get("nodes", [])
         evidence_nodes = [n for n in nodes if n.get("type") == "evidence"]
@@ -69,8 +70,9 @@ def test_scenario_d_bi_temporal_change():
     asyncio.run(execute_agentic_pipeline(job_id, files, query, execution_mode="fixture"))
     
     job = job_registry.get_job(job_id)
-    assert job["status"] in ["DONE", "MODEL_UNAVAILABLE"]
-    assert_traces(job, ["OBSERVATION_BINDING", "AGENTIC_EXECUTION", "ANSWER_SYNTHESIS"])
+    # Fixture CROMA tokens are all-zero, so MC6 may legitimately reject their zero-confidence evidence
+    assert job["status"] in ["DONE", "MODEL_UNAVAILABLE", "INSUFFICIENT_EVIDENCE"]
+    assert_traces(job, ["OBSERVATION_BINDING", "AGENTIC_EXECUTION", "VERIFICATION", "ANSWER_SYNTHESIS"])
 
 # SCENARIO F: Insufficient Observations
 def test_scenario_f_insufficient_observations():
@@ -87,15 +89,32 @@ def test_scenario_f_insufficient_observations():
 
 # SCENARIO G: Specialist Unavailable
 def test_scenario_g_specialist_unavailable():
-    job_id = job_registry.create_job()
-    query = "what changed? change smoke_test"
-    files = [("image_1_opt.tif", b"fake"), ("image_2_opt.tif", b"fake2")]
-    
-    # We test with execution_mode="real" for ChangeMamba, which will fail to find weights and return MODEL_UNAVAILABLE safely.
-    asyncio.run(execute_agentic_pipeline(job_id, files, query, execution_mode="real"))
-    
-    job = job_registry.get_job(job_id)
-    assert job["status"] in ["DONE", "MODEL_UNAVAILABLE", "INSUFFICIENT_EVIDENCE"]
+    """ChangeMamba cannot run without CUDA: the registry disables it and its adapter refuses without fabricating."""
+    from job_manager import build_job_registry
+    from agent.adapters import build_adapters, ChangeMambaExecutionAdapter
+    from agent.schemas import ToolCall
+    import torch
+
+    available, reason = ChangeMambaExecutionAdapter().availability()
+    if available:
+        pytest.skip("ChangeMamba is available on this machine")
+
+    job_registry_for_tools, report = build_job_registry("real", build_adapters("real"))
+    assert job_registry_for_tools.get("temporal_change_analysis").enabled is False
+    assert any(r["tool_id"] == "temporal_change_analysis" and "MODEL_UNAVAILABLE" in r["reason"] for r in report)
+    # An equivalent capability remains selectable
+    assert any(t.enabled for t in job_registry_for_tools.find_by_task("change_detection"))
+
+    t = torch.rand(1, 3, 64, 64)
+    res = ChangeMambaExecutionAdapter("real").execute(
+        ToolCall(call_id="c1", tool_id="temporal_change_analysis", arguments={"query": "what changed?"}),
+        {"image_count": 2, "image_1": {"modality": "optical", "crs": "EPSG:32643"}, "image_2": {"modality": "optical", "crs": "EPSG:32643"},
+         "spatial_overlap": 1.0, "coregistration_score": 1.0},
+        {"t1": t, "t2": t},
+    )
+    assert res.status == "failed"
+    assert "MODEL_UNAVAILABLE" in res.error_information
+    assert "evidence" not in res.outputs
 
 # SCENARIO H: Bounded Replanning (controlled execution failure)
 def test_scenario_h_execution_failure_replanning():

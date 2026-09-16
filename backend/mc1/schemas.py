@@ -77,7 +77,8 @@ class RequestObservationProfile(BaseModel):
             "relationship": self.relationship,
             "quality": {},
             "warnings": self.warnings,
-            "task_executable": self.task_executable
+            "task_executable": self.task_executable,
+            "alignment": (self.compatibility.factors.get("alignment") if self.compatibility else None),
         }
         
         footprints = []
@@ -90,6 +91,9 @@ class RequestObservationProfile(BaseModel):
                 "crs": obs.spatial.crs,
                 "filename": obs.file_source  # Always include filename
             }
+            # Downstream binding/temporal ordering needs the real timestamp when MC1 found one
+            if obs.temporal and obs.temporal.get("timestamp"):
+                legacy[img_key]["acquisition_date"] = obs.temporal["timestamp"]
                 
             legacy["quality"][obs.sensor.modality if obs.sensor.modality != "unknown" else img_key] = obs.quality.score
             

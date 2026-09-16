@@ -1,20 +1,27 @@
 # SatQuery AI — Known Architecture & Capability Gaps
-*Updated: 2026-09-10*
+*Updated: 2026-09-16 (demo prototype stabilization; see backend/data/reports/TASK_9_DEMO_PROTOTYPE_STABILIZATION.md)*
 
-## 1. Ambiguous Target Resolution (MC2/MC3)
-- **Symptom**: When multiple images are uploaded but a single-image query is issued (e.g., "Is there an airstrip in this image?"), the system silently defaults to evaluating `image_1` unless the query explicitly contains words like "second" or "image 2".
-- **Impact**: The user is not prompted to disambiguate, and the system does not disclose that it guessed the target image. This violates the "no silent guesswork" agentic principle.
-- **Required Fix**: Add a `target_image` field to the MC2 Structured Task Specification schema. If `image_count > 1` and `target_image` cannot be definitively resolved from the query, the planner should halt with `PRECONDITION_FAILED` and prompt the UI to render a disambiguation widget (e.g., "Which image do you mean? [Image 1] [Image 2]"). 
-- **Current Status**: Documented as a known gap. The `dispatcher.py` has been temporarily patched to inject an explicit warning into the evidence graph when it falls back to guessing, ensuring the user is at least notified of the assumption.
+## 1. Ambiguous Target Resolution (MC2/MC3) — OPEN
+- **Symptom**: With two images uploaded, a single-image question ("Is there a runway?") cannot be bound to one observation.
+- **Current behaviour**: The binder returns `AMBIGUOUS` and the job ends as `INSUFFICIENT_OBSERVATIONS` with the candidate images listed. It no longer guesses `image_1`.
+- **Required Fix**: Add a `target_image` field to the TaskSpec and a UI disambiguation widget ("Which image do you mean?").
 
-## 2. Hardcoded Entity Extraction (MC2)
-- **Symptom**: The task classifier currently hardcodes `target_entities: ["built-up area"]` and `required_operations: ["temporal_analysis", "spatial_localization"]` regardless of the actual user query.
-- **Impact**: The system cannot dynamically extract novel entities (e.g., "airstrip", "deforestation") from natural language, relying instead on generic tool capabilities.
-- **Required Fix**: Replace the heuristic `job_manager.py` task parser with a real LLM-based entity extraction and decomposition prompt (the true intended MC2 architecture).
-- **Current Status**: Documented as a known gap for the Phase 1 build scope.
+## 2. Hardcoded Entity Extraction (MC2) — RESOLVED
+- Query intent now comes from Qwen3 (`qwen3:4b` Q4_K_M via Ollama by default). When Qwen3 is unavailable or cannot resolve the intent, deterministic Tool Registry rules are used and the trace/result say so (`planner.query_intelligence = registry_rules`).
 
-## 3. Omitted Evidence Graph Edges (MC5)
-- **Symptom**: The MC5.2 Spatial Evidence Graph explicitly omits the `contradicts`, `corroborates`, and `precedes` edge types described in the architecture.
-- **Impact**: Complex multi-model verification (MC6) cannot currently rely on the graph to automatically flag topological contradictions or temporal precedence.
-- **Required Fix**: Implement a graph reasoning pass after normalization to compute temporal and logical relationships between claims.
-- **Current Status**: Documented as an accepted gap for Phase 1. Only `supports`, `derived_from`, and `overlaps` are implemented.
+## 3. Omitted Evidence Graph Edges (MC5) — OPEN
+- Only `supports`, `derived_from`, and `overlaps` edges exist; `contradicts`, `corroborates`, `precedes` are not implemented.
+
+## 4. Learned Change Detection (MC4B) — OPEN (environment)
+- ChangeMamba needs CUDA + `mamba-ssm`; on Apple Silicon it is registered as unavailable.
+- Change queries are served by the classical engine (SAR log-ratio / optical CVA). It localises change but does not classify it. Measured on 113 S1-AAD pairs: pixel F1 0.10, precision 0.06, recall 0.28 (`backend/data/reports/classical_cd_s1aad_eval.json`).
+
+## 5. CROMA Optical+SAR Fusion (MC4C) — WITHHELD (unvalidated)
+- CROMA loads and runs on real Sentinel-2/Sentinel-1 patches, but its optical/SAR agreement score does not separate matching from non-matching BigEarthNet pairs (40 pairs: mean cosine 0.011 vs 0.011; retrieval at chance). The tool is disabled in real mode unless `SATQUERY_ENABLE_UNVALIDATED_CROMA=1`.
+- The BigEarthNet-v2 land-cover head scored micro-F1 0.28 on 80 test patches under every band ordering tried, so its tags are not used as evidence.
+
+## 6. Confidence Calibration (MC6.2) — OPEN
+- All confidences are raw/uncalibrated and labelled as such (PaliGemma token probability, Otsu separability, change strength).
+
+## 7. Single-Image VQA Quality (MC4A) — OPEN
+- `google/paligemma-3b-pt-224` is the pretrained (not mix/fine-tuned) checkpoint; answers are short and unreliable on SAR (confidence is down-weighted by 0.3 for SAR inputs).

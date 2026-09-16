@@ -42,11 +42,9 @@ class EvaluationRunner:
             status = job.get("status", "FAILED")
             
             # Extract final text or bounding box prediction
-            parsed_pred = self.adapter.parse_prediction(job.get("result", {}), status)
-            
-            if parsed_pred == "[TEST FIXTURE] Mock synthesis":
-                parsed_pred = "yes" if "yes" in sample.ground_truth.lower() else "urban"
-                
+            # Predictions are scored exactly as produced; fixture answers are never rewritten.
+            parsed_pred = self.adapter.parse_prediction(job.get("result") or {}, status)
+
             # If the pipeline threw a known failure or block
             if status == "MODEL_UNAVAILABLE":
                 parsed_pred = "EVALUATION_BLOCKED"

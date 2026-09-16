@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 from pydantic import BaseModel
 from .schemas import TaskSpec, SubtaskSpec, ObservationRequirement, DecompositionResult
@@ -19,6 +20,26 @@ class QueryIntelligenceResult(BaseModel):
     observation_requirements: List[ObservationRequirement]
     ambiguous: bool
 
+MODALITY_TERMS = {
+    "optical": ("optical", "multispectral", "rgb", "true colour", "true color", "sentinel-2", "sentinel 2", "landsat"),
+    "sar": ("sar", "radar", "sentinel-1", "sentinel 1", "backscatter", "polarization", "polarisation"),
+}
+
+
+def ground_modalities(query: str, modalities: List[str]) -> List[str]:
+    """
+    Keep only modality constraints the user actually expressed. The LLM tends to assume "optical"
+    for generic questions ("Describe this image."), which would wrongly reject SAR or unlabelled uploads.
+    """
+    q = query.lower()
+    grounded = [
+        m for m in modalities
+        if m in MODALITY_TERMS
+        and any(re.search(rf"\b{re.escape(term)}\b", q) for term in MODALITY_TERMS[m])
+    ]
+    return grounded or ["unspecified"]
+
+
 class QueryIntelligencePipeline:
     """
     End-to-end Phase 2 pipeline.
@@ -35,7 +56,16 @@ class QueryIntelligencePipeline:
         
         # Step 2: Query Decomposition (Task 2.4)
         decomp_result = self.decomposer.decompose(query, task_spec)
-        
+
+        # Modality constraints must come from the query, not from the model's assumptions.
+        # (Fusion keeps optical+SAR: the requirement generator sets both for that task.)
+        decomp_result.primary_task_spec.required_modalities = ground_modalities(
+            query, decomp_result.primary_task_spec.required_modalities
+        )
+        for subtask in decomp_result.subtasks:
+            if subtask.primary_task != "cross_modal_fusion":
+                subtask.required_modalities = ground_modalities(query, subtask.required_modalities)
+
         # Step 3: Observation Requirements Generation (Task 2.5)
         obs_reqs = self.req_generator.generate(decomp_result)
         
