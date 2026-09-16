@@ -1,20 +1,16 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import UploadZone from '../components/UploadZone';
-import QueryBox from '../components/QueryBox';
-import AnalyzeButton from '../components/AnalyzeButton';
-import TracePanel, { type TraceEntry } from '../components/results/TracePanel';
-import ResultPanel from '../components/results/ResultPanel';
+import { useState, useCallback, useEffect } from 'react';
 import type { UploadedFile } from '../components/UploadZone';
 import ChatSidebar from '../components/assistant/ChatSidebar';
 import ChatThread from '../components/assistant/ChatThread';
+import ChatComposer from '../components/assistant/ChatComposer';
+import ModelSelector from '../components/assistant/ModelSelector';
 import { useChatSessions } from '../hooks/useChatSessions';
+import type { ChatMessage } from '../lib/chatStorage';
+import { snapshotJob, TERMINAL_STATES } from '../lib/jobResponse';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000';
-
-const TERMINAL_STATES = [
-  'DONE', 'FAILED', 'ABSTAIN', 'INSUFFICIENT_EVIDENCE', 'PRECONDITION_FAILED',
-  'MODEL_UNAVAILABLE', 'INSUFFICIENT_OBSERVATIONS',
-];
+const POLL_MS = 1500;
+const MAX_POLL_FAILURES = 20; // ~30 s without contact
 
 const EXAMPLE_QUERIES = [
   'What changed between these two images?',
@@ -23,45 +19,44 @@ const EXAMPLE_QUERIES = [
   'Describe this image.',
 ];
 
+const STAGE_LABELS: Record<string, string> = {
+  QUEUED: 'queued',
+  MC1_VALIDATING: 'checking the inputs',
+  QUERY_INTELLIGENCE: 'understanding the question',
+  TOOL_SELECTION: 'selecting specialist models',
+  OBSERVATION_BINDING: 'binding the images to the task',
+  WORKFLOW_PLANNING: 'planning the workflow',
+  AGENTIC_EXECUTION: 'running specialist models',
+  EVIDENCE_NORMALIZATION: 'collecting evidence',
+  VERIFICATION: 'verifying evidence',
+  ANSWER_SYNTHESIS: 'writing the answer',
+};
+
 interface SystemStatus {
   llm: { backend: string; model: string; reachable: boolean | null };
   tools: { tool_id: string; name: string; available: boolean; reason: string }[];
 }
 
-export default function AssistantPage() {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [query, setQuery] = useState('');
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [queryError, setQueryError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+interface PendingJob {
+  jobId: string;
+  sessionId: string;
+}
 
-  // Job states
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [trace, setTrace] = useState<TraceEntry[]>([]);
-  const [result, setResult] = useState<any>(null);
-  const [evidenceGraph, setEvidenceGraph] = useState<any>(null);
+const UNREACHABLE_MESSAGE =
+  'Could not reach the SatQuery backend, so your question was not analysed. Check that the server is running and try again.';
+
+export default function AssistantPage() {
+  const chats = useChatSessions();
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [prompt, setPrompt] = useState('');
+  const [composerError, setComposerError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [pending, setPending] = useState<PendingJob | null>(null);
+  const [stage, setStage] = useState<string>('QUEUED');
   const [system, setSystem] = useState<SystemStatus | null>(null);
 
-  const chats = useChatSessions();
-  // Session that submitted the in-flight query; its assistant turn is recorded when the job ends
-  const pendingSessionRef = useRef<string | null>(null);
-
-  // Re-open a finished or running job from a shareable link: ?job=<job_id>
-  useEffect(() => {
-    const sharedJob = new URLSearchParams(window.location.search).get('job');
-    if (sharedJob) {
-      setJobId(sharedJob);
-      setLoading(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!jobId) return;
-    const url = new URL(window.location.href);
-    url.searchParams.set('job', jobId);
-    window.history.replaceState(null, '', url.toString());
-  }, [jobId]);
+  const inFlight = submitting || pending !== null;
+  const { appendMessage } = chats;
 
   useEffect(() => {
     fetch(`${API_BASE}/api/system`)
@@ -70,165 +65,174 @@ export default function AssistantPage() {
       .catch(() => setSystem(null));
   }, []);
 
-  const canAnalyze = files.length > 0 && query.trim().length > 0;
+  // Re-open a job from a shareable link (?job=<id>) as an assistant turn in a fresh chat
+  useEffect(() => {
+    const sharedJob = new URLSearchParams(window.location.search).get('job');
+    if (sharedJob) {
+      const sessionId = chats.newChat();
+      setPending({ jobId: sharedJob, sessionId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
+    const url = new URL(window.location.href);
+    if (pending) url.searchParams.set('job', pending.jobId);
+    else url.searchParams.delete('job');
+    window.history.replaceState(null, '', url.toString());
+  }, [pending]);
 
-    const pollJob = async () => {
-      if (!jobId) return;
+  const finishWith = useCallback((job: PendingJob, message: ChatMessage) => {
+    appendMessage(job.sessionId, message);
+    setPending(null);
+    setStage('QUEUED');
+  }, [appendMessage]);
 
+  // Poll the in-flight job; one completed payload is rendered when it reaches a terminal status
+  useEffect(() => {
+    if (!pending) return;
+    let cancelled = false;
+    let failures = 0;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const poll = async () => {
       try {
-        const statusRes = await fetch(`${API_BASE}/api/jobs/${jobId}/status`);
-        if (!statusRes.ok) return;
-        const statusData = await statusRes.json();
-        setStatus(statusData.status);
-
-        const traceRes = await fetch(`${API_BASE}/api/jobs/${jobId}/trace`);
-        if (traceRes.ok) {
-          const traceData = await traceRes.json();
-          setTrace(traceData.trace || []);
-        }
-
-        if (TERMINAL_STATES.includes(statusData.status)) {
-          clearInterval(interval);
-
-          const res = await fetch(`${API_BASE}/api/jobs/${jobId}/result`);
-          const jobResult = res.ok ? (await res.json()).result : null;
-          setResult(jobResult);
-
-          if (pendingSessionRef.current) {
-            chats.appendMessage(pendingSessionRef.current, {
+        const statusRes = await fetch(`${API_BASE}/api/jobs/${pending.jobId}/status`);
+        if (statusRes.status === 404) {
+          if (!cancelled) {
+            finishWith(pending, {
               role: 'assistant',
-              content: jobResult?.final_answer ?? `The request ended with status ${statusData.status}.`,
-              confidence: typeof jobResult?.confidence === 'number'
-                ? { value: jobResult.confidence, source: 'model_confidence_uncalibrated' }
-                : undefined,
-              status: statusData.status,
-              jobId,
+              content: 'The backend no longer has this job (it may have been restarted), so there is no result to show.',
+              status: 'FAILED',
+              error: 'job_not_found',
+              jobId: pending.jobId,
               timestamp: new Date().toISOString(),
             });
-            pendingSessionRef.current = null;
           }
-
-          const egRes = await fetch(`${API_BASE}/api/jobs/${jobId}/evidence_graph`);
-          if (egRes.ok) setEvidenceGraph((await egRes.json()).evidence_graph);
-
-          setLoading(false);
+          return;
         }
-      } catch (e) {
-        console.error('Polling error', e);
+        if (!statusRes.ok) throw new Error(`status ${statusRes.status}`);
+        const { status } = await statusRes.json();
+        failures = 0;
+        if (cancelled) return;
+        setStage(status);
+
+        if (TERMINAL_STATES.includes(status)) {
+          const [resultRes, traceRes, structuredRes] = await Promise.all([
+            fetch(`${API_BASE}/api/jobs/${pending.jobId}/result`),
+            fetch(`${API_BASE}/api/jobs/${pending.jobId}/trace`),
+            fetch(`${API_BASE}/api/jobs/${pending.jobId}/structured_trace`),
+          ]);
+          const result = resultRes.ok ? (await resultRes.json()).result : null;
+          const progress = traceRes.ok ? (await traceRes.json()).trace : [];
+          const structured = structuredRes.ok ? (await structuredRes.json()).structured_trace : null;
+          if (cancelled) return;
+
+          const { response, executionTrace } = snapshotJob(result, progress, structured);
+          const content = status === 'FAILED'
+            ? 'The analysis failed on the server, so no answer was produced. The execution trace shows where it stopped.'
+            : response.final_answer || `The request ended with status ${status}.`;
+          finishWith(pending, {
+            role: 'assistant',
+            content,
+            status,
+            jobId: pending.jobId,
+            confidence: status === 'DONE' ? { value: response.confidence, source: 'model_confidence_uncalibrated' } : undefined,
+            response,
+            executionTrace,
+            timestamp: new Date().toISOString(),
+          });
+          return;
+        }
+      } catch {
+        failures += 1;
+        if (failures >= MAX_POLL_FAILURES) {
+          if (!cancelled) {
+            finishWith(pending, {
+              role: 'assistant',
+              content: 'Lost contact with the SatQuery backend while the analysis was running, so no answer was received.',
+              status: 'FAILED',
+              error: 'backend_unreachable',
+              jobId: pending.jobId,
+              timestamp: new Date().toISOString(),
+            });
+          }
+          return;
+        }
       }
+      if (!cancelled) timer = setTimeout(poll, POLL_MS);
     };
 
-    if (jobId && loading) {
-      interval = setInterval(pollJob, 1500);
-      pollJob();
-    }
+    poll();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [pending, finishWith]);
 
-    return () => clearInterval(interval);
-  }, [jobId, loading]);
-
-  const handleAnalyze = useCallback(async () => {
-    let hasError = false;
-
+  const handleSend = useCallback(async () => {
+    if (inFlight) return;
     if (files.length === 0) {
-      setUploadError('Upload at least one image to analyze.');
-      hasError = true;
-    } else {
-      setUploadError(null);
+      setComposerError('Attach at least one image to analyse.');
+      return;
     }
-
-    if (query.trim().length === 0) {
-      setQueryError('Enter a query describing what you\'d like to analyze.');
-      hasError = true;
-    } else {
-      setQueryError(null);
+    const question = prompt.trim();
+    if (!question) {
+      setComposerError('Enter a question about the attached image(s).');
+      return;
     }
-
-    if (hasError) return;
+    setComposerError(null);
 
     const sessionId = chats.ensureActiveSession();
-    chats.appendMessage(sessionId, {
+    appendMessage(sessionId, {
       role: 'user',
-      content: query.trim(),
+      content: question,
       attachments: files.map((f) => ({ name: f.file.name, size: f.file.size, type: f.file.type })),
       timestamp: new Date().toISOString(),
     });
-    pendingSessionRef.current = sessionId;
 
-    setLoading(true);
-    setJobId(null);
-    setStatus(null);
-    setTrace([]);
-    setResult(null);
-    setEvidenceGraph(null);
-
+    setSubmitting(true);
     try {
       const formData = new FormData();
       files.forEach((f) => formData.append('files', f.file));
-      formData.append('query', query.trim());
-
-      const response = await fetch(`${API_BASE}/api/query`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-
+      formData.append('query', question);
+      const response = await fetch(`${API_BASE}/api/query`, { method: 'POST', body: formData });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      setJobId(data.job_id);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setUploadError(
-        message === 'Failed to fetch'
-          ? `Cannot reach the backend at ${API_BASE}. Check that uvicorn is running and that it allows this page's origin (${window.location.origin}).`
-          : message
-      );
-      chats.appendMessage(sessionId, {
+      setStage('QUEUED');
+      setPending({ jobId: data.job_id, sessionId });
+      files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
+      setFiles([]);
+      setPrompt('');
+    } catch {
+      appendMessage(sessionId, {
         role: 'assistant',
-        content: 'The request could not be sent to the backend, so no analysis was run.',
+        content: UNREACHABLE_MESSAGE,
         status: 'FAILED',
+        error: 'backend_unreachable',
         timestamp: new Date().toISOString(),
       });
-      pendingSessionRef.current = null;
-      setLoading(false);
+    } finally {
+      setSubmitting(false);
     }
-  }, [files, query, chats]);
-
-  /** Clears the live job view (used when switching chats) without touching stored history. */
-  const resetWorkspace = useCallback(() => {
-    setJobId(null);
-    setStatus(null);
-    setTrace([]);
-    setResult(null);
-    setEvidenceGraph(null);
-    setUploadError(null);
-    setQueryError(null);
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('job')) {
-      url.searchParams.delete('job');
-      window.history.replaceState(null, '', url.toString());
-    }
-  }, []);
+  }, [inFlight, files, prompt, chats, appendMessage]);
 
   const handleNewChat = useCallback(() => {
-    if (loading) return;
+    if (inFlight) return;
     chats.newChat();
-    resetWorkspace();
-    setFiles([]);
-    setQuery('');
-  }, [loading, chats, resetWorkspace]);
+    setComposerError(null);
+  }, [inFlight, chats]);
 
   const handleSelectSession = useCallback((id: string) => {
-    if (loading || id === chats.activeId) return;
+    if (inFlight || id === chats.activeId) return;
     chats.selectSession(id);
-    resetWorkspace();
-  }, [loading, chats, resetWorkspace]);
+    setComposerError(null);
+  }, [inFlight, chats]);
 
-  const isTerminal = status !== null && TERMINAL_STATES.includes(status);
+  const availableTools = system?.tools.filter((t) => t.available) ?? [];
+  const pendingStage = pending && pending.sessionId === chats.activeId
+    ? (STAGE_LABELS[stage] ?? stage.toLowerCase())
+    : submitting ? 'sending the request' : null;
 
   return (
     <div className={`assistant-layout ${chats.collapsed ? 'assistant-layout--collapsed' : ''}`}>
@@ -236,7 +240,7 @@ export default function AssistantPage() {
         sessions={chats.sessions}
         activeId={chats.activeId}
         collapsed={chats.collapsed}
-        busy={loading}
+        busy={inFlight}
         onToggleCollapsed={() => chats.setCollapsed(!chats.collapsed)}
         onNewChat={handleNewChat}
         onSelect={handleSelectSession}
@@ -244,97 +248,37 @@ export default function AssistantPage() {
       />
 
       <div className="assistant-center">
-      <ChatThread session={chats.activeSession} />
-
-      <main className="app-main">
-        {/* ── Left Panel: Inputs ── */}
-        <section className="panel panel--inputs">
-          <div className="panel__title">
-            Inputs
-            {system && (
-              <span className={`pill panel__title-pill ${system.llm.reachable === false ? 'pill--warn' : ''}`} title={system.llm.backend}>
-                LLM: {system.llm.model}{system.llm.reachable === false ? ' · offline (registry rules)' : ''}
-              </span>
-            )}
-          </div>
-
-          <UploadZone
-            files={files}
-            onFilesChange={setFiles}
-            error={uploadError}
-            onError={setUploadError}
-          />
-
-          <QueryBox
-            query={query}
-            onChange={(v) => {
-              setQuery(v);
-              if (v.trim().length > 0) setQueryError(null);
-            }}
-            error={queryError}
-          />
-
-          <div className="example-queries">
-            {EXAMPLE_QUERIES.map((q) => (
-              <button key={q} className="example-query" onClick={() => { setQuery(q); setQueryError(null); }}>
-                {q}
-              </button>
-            ))}
-          </div>
-
-          <AnalyzeButton
-            disabled={!canAnalyze}
-            loading={loading}
-            onClick={handleAnalyze}
-          />
-
+        <div className="chat-header">
+          <ModelSelector />
           {system && (
-            <div className="engine-list">
-              <div className="engine-list__title">Specialist engines (Tool Registry)</div>
-              {system.tools.map((t) => (
-                <div key={t.tool_id} className="engine-list__item" title={t.reason}>
-                  <span className={`dot ${t.available ? 'dot--ok' : 'dot--off'}`} />
-                  <span>{t.name}</span>
-                  {!t.available && <span className="engine-list__reason">{t.reason.split(':')[0]}</span>}
-                </div>
-              ))}
-            </div>
+            <span
+              className={`pill ${system.llm.reachable === false ? 'pill--warn' : ''}`}
+              title={system.tools.map((t) => `${t.name}: ${t.available ? 'available' : t.reason}`).join('\n')}
+            >
+              {system.llm.reachable === false ? 'LLM offline · Tool Registry rules' : `LLM: ${system.llm.model}`}
+              {' · '}{availableTools.length} of {system.tools.length} specialist engines available
+            </span>
           )}
-        </section>
+        </div>
 
-        {/* ── Right Panel: Results & Trace ── */}
-        <section className="panel panel--results">
-          <div className="panel__title">Analysis & Reporting</div>
-          {jobId && (
-            <div className="job-status-container">
-              {isTerminal ? (
-                <ResultPanel
-                  apiBase={API_BASE}
-                  status={status as string}
-                  result={result}
-                  evidenceGraph={evidenceGraph}
-                  jobId={jobId}
-                />
-              ) : (
-                <div className="result-panel result-panel--processing">
-                  <div className="spinner"></div>
-                  <p>Processing ({status || 'QUEUED'})…</p>
-                </div>
-              )}
-              <div style={{ marginTop: '20px' }}>
-                <TracePanel trace={trace} />
-              </div>
-            </div>
-          )}
+        <ChatThread
+          apiBase={API_BASE}
+          session={chats.activeSession}
+          pendingStage={pendingStage}
+          examples={EXAMPLE_QUERIES}
+          onPickExample={(q) => { setPrompt(q); setComposerError(null); }}
+        />
 
-          {!jobId && !loading && (
-            <div className="empty-state">
-              <p>Upload images and enter a query to begin analysis.</p>
-              <p className="empty-state__hint">For change detection, upload the earlier image first (Image 1 = before, Image 2 = after) unless the files carry acquisition dates.</p>
-            </div>
-          )}
-        </section>
-      </main>
+        <ChatComposer
+          files={files}
+          onFilesChange={setFiles}
+          prompt={prompt}
+          onPromptChange={(v) => { setPrompt(v); if (v.trim()) setComposerError(null); }}
+          onSend={handleSend}
+          inFlight={inFlight}
+          error={composerError}
+          onError={setComposerError}
+        />
       </div>
     </div>
   );

@@ -8,6 +8,8 @@
  * to empty history and never crashes the page.
  */
 
+import type { JobExecutionTrace, JobResponse } from './jobResponse';
+
 export const STORAGE_KEYS = {
   sidebarCollapsed: 'satquery.sidebar.collapsed',
   sessions: 'satquery.chat.sessions',
@@ -36,13 +38,18 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   attachments?: ChatAttachment[];
-  executionTrace?: unknown;
+  /** Real execution trace of the job that produced this turn (see lib/jobResponse.ts). */
+  executionTrace?: JobExecutionTrace;
   confidence?: ChatConfidence;
   timestamp: string;
   /** Backend job this message belongs to (lets the full result be re-fetched while the server still holds it). */
   jobId?: string;
   /** Terminal job status, e.g. DONE, ABSTAIN, INSUFFICIENT_EVIDENCE. */
   status?: string;
+  /** Backend answer payload for assistant turns (real MC7/MC8 field names). */
+  response?: JobResponse;
+  /** Set when the request never produced a backend result (e.g. backend unreachable). */
+  error?: string;
 }
 
 export interface ChatSession {

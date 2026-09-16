@@ -34,7 +34,15 @@ function formatSize(bytes: number): string {
 
 export type { UploadedFile };
 
-export default function UploadZone({ files, onFilesChange, error, onError }: UploadZoneProps) {
+/**
+ * Attachment handling shared by the panel UploadZone and the Assistant chat composer:
+ * MC1-accepted extensions only, at most 2 images, drag-and-drop + picker, removable.
+ */
+export function useImageAttachments(
+  files: UploadedFile[],
+  onFilesChange: (files: UploadedFile[]) => void,
+  onError: (error: string | null) => void,
+) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragActive, setIsDragActive] = useState(false);
 
@@ -115,6 +123,19 @@ export default function UploadZone({ files, onFilesChange, error, onError }: Upl
     },
     [files, onFilesChange, onError]
   );
+
+  return {
+    inputRef, isDragActive, handleDrop, handleDragOver, handleDragLeave, handleInputChange, handleRemove,
+    acceptAttribute: ACCEPTED_EXTENSIONS.join(','), maxFiles: MAX_FILES,
+  };
+}
+
+export { formatSize };
+
+export default function UploadZone({ files, onFilesChange, error, onError }: UploadZoneProps) {
+  const {
+    inputRef, isDragActive, handleDrop, handleDragOver, handleDragLeave, handleInputChange, handleRemove,
+  } = useImageAttachments(files, onFilesChange, onError);
 
   const hasFiles = files.length > 0;
 
