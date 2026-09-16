@@ -1084,3 +1084,68 @@ body {
 .trace-item--verification { border-left-color: #06b6d4; }
 .trace-item--answer_synthesis { border-left-color: #6366f1; }
 .trace-item--model_unavailable, .trace-item--insufficient_observations { border-left-color: #ef4444; }
+
+/* ── Shared Navbar (Home / Assistant shell) — existing tokens only ── */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000; /* above Leaflet panes (400–700) */
+  padding: 12px 32px;
+}
+.navbar__brand { text-decoration: none; }
+.navbar__controls { display: flex; align-items: center; gap: var(--spacing-8); }
+.navbar__links { display: flex; align-items: center; gap: var(--spacing-4); }
+.navbar__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-base);
+  border-bottom: 2px solid transparent;
+  color: var(--ink-muted);
+  font: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.navbar__link:hover { color: var(--ink); background: var(--surface-sunken); }
+.navbar__link--active { color: var(--primary); border-bottom-color: var(--primary); border-radius: var(--radius-base) var(--radius-base) 0 0; }
+.navbar__github-label { display: none; }
+.navbar__menu-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-base);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.panel__title-pill { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 450; }
+
+@media (max-width: 640px) {
+  .navbar { padding: 10px 16px; }
+  .navbar__menu-toggle { display: inline-block; }
+  .navbar__links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: var(--spacing-8) 16px var(--spacing-16);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .navbar__links--open { display: flex; }
+  .navbar__link { padding: 10px 12px; border-bottom: none; border-left: 2px solid transparent; border-radius: 0; }
+  .navbar__link--active { border-left-color: var(--primary); border-radius: 0; }
+  .navbar__github-label { display: inline; }
+}
+
+/* Home route (Phase 1 stub; content in Phase 2) */
+.home { flex: 1; padding: var(--spacing-48) 32px; }
+.home__headline { font: var(--text-display); color: var(--ink); }

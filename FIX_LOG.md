@@ -159,3 +159,11 @@ Contract discrepancies vs. the build brief: backend is FastAPI (not Flask); `gen
 Deployment blockers found: CORS only allows http://localhost|127.0.0.1 origins; the backend currently runs only on this Mac (Ollama + local weights); an HTTPS Vercel/Netlify page cannot call an http:// backend (mixed content).
 Regression check added: None (inventory only).
 Verified by: static inspection of frontend/src, backend/main.py, job_manager.py; live GET /api/jobs/{id}/result|trace|structured_trace on the running server.
+
+[WEB-APP PHASE 1] [FEATURE] Shared Navbar + routing for / and /assistant (2026-09-17)
+Change: Added react-router-dom 7.18.4 (BrowserRouter in main.tsx). App.tsx is now the shell (theme state, Navbar, Routes). The existing analysis workspace moved in place to pages/AssistantPage.tsx (git mv; no duplicate); its inline header was removed. New components/Navbar.tsx and a pages/HomePage.tsx route stub (content in Phase 2).
+Navbar: logo mark (existing .app-header__icon) + "SatQuery" wordmark → /; right side Home, Assistant, GitHub (official mark, https://github.com/sudeep-07-hub/SatQuery_AI, target=_blank rel="noopener noreferrer"). Sticky, z-index above Leaflet panes. Active route uses the existing --primary token. At ≤640 px the links collapse into a menu button; the logo stays visible.
+Deviations to review: (1) the existing light/dark toggle is kept in the navbar as a control, not a nav item, to avoid regressing dark mode; (2) the header version badge was dropped; (3) the LLM status pill moved into the Assistant "Inputs" title; (4) legacy /?job=<id> links redirect to /assistant?job=<id>; unknown routes redirect to /.
+Token check: :root, [data-theme="dark"] and the IBM Plex import are byte-identical to HEAD; added CSS uses only defined variables, no hex colours, no font-family. Pre-existing drift logged in Phase 0 is unchanged.
+Gate: PASS — 19/19 headless-Chrome checks against the production build (vite preview): both routes render (including deep links), client-side clicks on Home/Assistant/logo, correct active state in light (#F2600C) and dark (#FF7A24), exactly 3 nav items, GitHub URL/target/rel, legacy redirect, mobile menu open/navigate/close, no console exceptions. npm run build passes.
+Regression check added: scripted CDP gate (not yet in repo; runs against vite preview).
