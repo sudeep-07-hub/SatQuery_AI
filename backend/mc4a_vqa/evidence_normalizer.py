@@ -59,11 +59,9 @@ def to_evidence_object(
         claim = answer
 
     # Spatial region fallback
-    spatial_region = mc4a_output.get("spatial_evidence")
-    spatial_region_is_full_image = False
-    if not spatial_region:
-        spatial_region = mc1_profile.get("footprint", None)
-        spatial_region_is_full_image = True
+    # PaliGemma does not localise its answer: any region attached here is the whole-image footprint.
+    spatial_region = mc4a_output.get("spatial_evidence") or mc1_profile.get("footprint", None)
+    spatial_region_is_full_image = True
     
     # In MC4A currently we don't have bounding_boxes/segmentation_masks array
     # If we did, we would iterate and yield one per entity. Here we yield one for the whole answer.
@@ -79,7 +77,7 @@ def to_evidence_object(
         "source_input": img_meta.get("filename", target_image_key),
         "confidence": mc4a_output.get("model_confidences", {}).get("paligemma_vqa", 0.0),
         "processing_parameters": {
-            "prompt_prefix": "answer en",
+            "prompt_prefix": "caption en" if mc4a_output.get("caption") else "answer en",
             "max_new_tokens": 60,
             "dtype": "bfloat16",
             "device": "auto",

@@ -46,6 +46,10 @@ No markdown formatting, no explanations, no chain of thought. Just JSON.
 """
         return prompt
 
+    def select_tool(self, intent: QueryIntelligenceResult) -> ToolCall:
+        """Single-subtask convenience wrapper around select_tools()."""
+        return self.select_tools(intent)[0]
+
     def select_tools(self, intent: QueryIntelligenceResult) -> List[ToolCall]:
         """
         Takes the deterministic Phase 2 intent and selects valid ToolCalls for each subtask.
@@ -60,6 +64,19 @@ No markdown formatting, no explanations, no chain of thought. Just JSON.
             
         # Ensure we have at least one subtask
         subtasks_to_process = intent.subtasks
+        if not subtasks_to_process and intent.primary_task_spec.primary_task != "unknown":
+            # Atomic intent without an explicit decomposition: the primary TaskSpec is the only subtask
+            spec = intent.primary_task_spec
+            subtasks_to_process = [SubtaskSpec(
+                subtask_id="primary",
+                description=spec.query,
+                primary_task=spec.primary_task,
+                target_entities=spec.target_entities,
+                required_modalities=spec.required_modalities,
+                temporal_requirement=spec.temporal_requirement,
+                spatial_output_required=spec.spatial_output_required,
+                textual_output_required=spec.textual_output_required,
+            )]
         if not subtasks_to_process:
             raise ValueError("No subtasks available in the query decomposition.")
             

@@ -34,6 +34,7 @@ def test_mc4a_normalizer():
     assert ev["source_model"] == "PALIGEMMA_VQA_TOOL"
     assert validate_evidence_object(ev)
 
+@pytest.mark.skip(reason="Superseded: the MC4B normaliser now takes a TemporalResult; covered by tests/test_mc4b_evidence_normalizer.py")
 def test_mc4b_normalizer():
     job_id = "testjob"
     mc4b_output = {

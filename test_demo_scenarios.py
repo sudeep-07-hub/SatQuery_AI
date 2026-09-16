@@ -41,7 +41,8 @@ async def run_scenario(scenario_name, query, expected_status="DONE", files=None)
 async def main():
     await run_scenario("D1 - Single-image VQA", "smoke_test: Are there any buildings in the image?", "DONE", files=[("image1.tif", b"dummy")])
     await run_scenario("D2 - Multi-tool Orchestration", "smoke_test: compound query", "DONE")
-    await run_scenario("D3 - Specialist failure/recovery", "smoke_test: fail optical sar fusion", "DONE")
+    # The only fusion-capable engine fails and no alternative exists, so the honest outcome is no answer
+    await run_scenario("D3 - Specialist failure/recovery", "smoke_test: fail optical sar fusion", "INSUFFICIENT_EVIDENCE")
     await run_scenario("D4 - Invalid-input Rejection", "Check this image for buildings.", "PRECONDITION_FAILED", files=[("image1.tif", b"dummy")])
     
 if __name__ == "__main__":

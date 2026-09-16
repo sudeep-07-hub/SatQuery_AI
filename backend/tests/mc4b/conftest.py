@@ -117,3 +117,33 @@ def sample_task_spec():
         "textual_output_required": True,
         "query": "Has built-up area increased?",
     }
+
+
+# ── ChangeMamba availability gate ────────────────────────────────
+# These tests exercise successful ChangeMamba inference, which needs CUDA + mamba-ssm.
+# On machines without it they are skipped (with the reason) instead of failing.
+_REQUIRES_CHANGEMAMBA = (
+    "test_interface_contract.py::TestOutputContract",
+    "test_interface_contract.py::TestEvidenceObjectSchema",
+    "test_numerical.py::",
+    "test_agentic_integration.py::TestEndToEndTrace::test_clean_passthrough",
+    "test_agentic_integration.py::TestEndToEndTrace::test_audit_trail_evidence_shape",
+)
+
+
+def _changemamba_unavailable_reason():
+    from mc4b_temporal.backbone import get_backbone
+    try:
+        get_backbone("changemamba")
+        return None
+    except Exception as e:
+        return f"ChangeMamba unavailable: {e}"
+
+
+def pytest_collection_modifyitems(config, items):
+    reason = None
+    for item in items:
+        if any(key in item.nodeid for key in _REQUIRES_CHANGEMAMBA):
+            reason = reason or _changemamba_unavailable_reason()
+            if reason:
+                item.add_marker(pytest.mark.skip(reason=reason))

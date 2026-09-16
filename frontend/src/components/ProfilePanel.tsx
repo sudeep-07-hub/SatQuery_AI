@@ -28,7 +28,7 @@ function highlightJson(json: string): string {
     '<span class="json-key">$1</span>:'
   ).replace(
     /:\s*("(?:[^"\\]|\\.)*")/g,
-    (match, val) => `: <span class="json-string">${val}</span>`
+    (_match, val) => `: <span class="json-string">${val}</span>`
   ).replace(
     /:\s*(\d+\.?\d*)/g,
     ': <span class="json-number">$1</span>'

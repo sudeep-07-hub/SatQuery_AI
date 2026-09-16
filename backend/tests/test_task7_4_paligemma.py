@@ -62,7 +62,8 @@ def test_4_single_image_vqa_fixture():
     assert res.get("blocked_reason") is None
     assert res["textual_answer"] == "wheat"
     assert "model_confidences" in res
-    assert res["spatial_evidence"] is not None
+    # Non-georeferenced input: no invented footprint polygon
+    assert res["spatial_evidence"] is None
 
 # TASK 5: Captioning
 def test_5_captioning_fixture():

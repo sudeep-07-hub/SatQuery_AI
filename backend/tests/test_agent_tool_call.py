@@ -1,3 +1,4 @@
+import os
 import pytest
 from pydantic import ValidationError
 from agent.schemas import ToolCall, InputBinding
@@ -110,7 +111,7 @@ def test_18_no_model_loading():
     # Run in subprocess to ensure no models are loaded
     import subprocess
     code = "import sys; from agent.schemas import ToolCall; ToolCall(call_id='1', tool_id='1'); assert 'mc4a_vqa.specialist' not in sys.modules"
-    subprocess.run([sys.executable, "-c", code], check=True, env={"PYTHONPATH": "backend"})
+    subprocess.run([sys.executable, "-c", code], check=True, env={**os.environ, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.abspath(__file__)))})
 
 def test_19_no_execution():
     call = ToolCall(call_id="c1", tool_id="single_image_vqa", arguments={"query": "test"})

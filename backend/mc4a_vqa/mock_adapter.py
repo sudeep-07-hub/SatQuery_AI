@@ -11,7 +11,7 @@ class MockPaliGemmaVQAAdapter:
             "what is the primary land cover": "forest",
         }
 
-    def predict(self, image_input, query: str) -> dict:
+    def predict(self, image_input, query: str, task: str = "vqa") -> dict:
         # We don't actually process the image, just check if it's openable/convertible
         if isinstance(image_input, str):
             from PIL import Image

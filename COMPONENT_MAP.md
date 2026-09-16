@@ -1,3 +1,5 @@
+> **Superseded (2026-09-16):** this report describes an earlier build and its claims no longer match the code. See `backend/data/reports/TASK_9_DEMO_PROTOTYPE_STABILIZATION.md`.
+
 # SatQuery AI — Component Map (Phase 0 Reconnaissance)
 *Generated: 2026-09-12 | Phase 0 — READ-ONLY, no fixes applied*
 

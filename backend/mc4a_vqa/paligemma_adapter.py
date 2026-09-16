@@ -21,7 +21,7 @@ class PaliGemmaVQAAdapter:
         )
         self.model.eval()
 
-    def predict(self, image_input, query: str) -> dict:
+    def predict(self, image_input, query: str, task: str = "vqa") -> dict:
         if isinstance(image_input, str):
             try:
                 image = Image.open(image_input).convert("RGB")
@@ -41,7 +41,8 @@ class PaliGemmaVQAAdapter:
         else:
             image = image_input.convert("RGB")
             
-        prompt = f"<image>answer en {query}"
+        # PaliGemma task prefixes: "caption en" for descriptions, "answer en <question>" for VQA
+        prompt = "<image>caption en" if task == "caption" else f"<image>answer en {query}"
         inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(self.model.device)
         with torch.no_grad():
             outputs = self.model.generate(

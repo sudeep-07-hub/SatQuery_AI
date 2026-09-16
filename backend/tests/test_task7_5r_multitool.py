@@ -122,4 +122,4 @@ def test_multitool_failure_replanning():
     assert len(evidence_objects) >= 1
     
     specialists_used = {ev.get("source_model") for ev in evidence_objects if ev.get("source_model")}
-    assert any("single_image_vqa" in s for s in specialists_used), "single_image_vqa evidence should be retained despite ChangeMamba failure"
+    assert any("PALIGEMMA" in s for s in specialists_used), "single_image_vqa (PaliGemma) evidence should be retained despite ChangeMamba failure"

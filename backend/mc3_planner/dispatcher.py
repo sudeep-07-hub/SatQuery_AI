@@ -10,6 +10,7 @@ from typing import Dict, Optional
 
 from mc4b_temporal.tool_adapter import ChangeMambaAdapter
 from mc4b_temporal.evidence_normalizer import normalize_to_evidence
+from mc4b_temporal.result import TemporalResult
 from mc4a_vqa.specialist import PaliGemmaVQASpecialist
 from mc4a_vqa.evidence_normalizer import to_evidence_object
 
@@ -167,11 +168,19 @@ def execute_plan(
                     "failed": result.get("failed", []),
                 }
 
+            if result.get("status") != "SUCCESS":
+                return {
+                    "status": result.get("status", "MODEL_UNAVAILABLE"),
+                    "tool": tool_name,
+                    "reason": result.get("reason"),
+                }
+
             tool_outputs[tool_name] = result
 
-            # Normalize to Evidence Objects (MC5.1)
-            evidence = normalize_to_evidence(result, mc1_profile, query, job_id)
-            evidence_objects.extend(evidence)
+            # MC5.1 normalisation now consumes a TemporalResult (see mc4b_temporal/evidence_normalizer.py);
+            # this legacy dict-based path has no TemporalResult to normalise, so it must not invent evidence.
+            if isinstance(result, TemporalResult):
+                evidence_objects.extend(normalize_to_evidence(result, job_id))
 
     return {
         "status": "SUCCESS",

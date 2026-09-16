@@ -28,3 +28,9 @@ test_ollama_controller_smoke.py
 test_ollama_temp.py
 test_qwen3_smoke.py
 backend/tests/test_temp*.py
+
+# Per-job uploaded rasters (runtime data)
+backend/uploads/
+
+# BigEarthNet demo patches (dataset licence unresolved; extract locally)
+backend/demo_data/

@@ -51,7 +51,8 @@ class TestPixelToGeoProjection:
         for gr in geo_regions:
             assert "geometry" in gr
             assert "crs" in gr
-            assert gr["crs"] == "EPSG:32643"
+            # GeoJSON (RFC 7946) output is reprojected to WGS84
+            assert gr["crs"] == "EPSG:4326"
             # Validate it's a valid GeoJSON geometry
             geom = gr["geometry"]
             assert geom["type"] == "Polygon"

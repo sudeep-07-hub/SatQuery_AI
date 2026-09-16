@@ -1,3 +1,4 @@
+import os
 import pytest
 import json
 from unittest.mock import MagicMock
@@ -226,7 +227,10 @@ def test_24_no_execution():
     assert not hasattr(call, "execute")
 
 def test_25_no_model_loading_through_registry():
-    assert "mc4a_vqa.specialist" not in sys.modules
+    # Checked in a fresh interpreter: other test modules legitimately import the specialist in-process
+    import subprocess
+    code = "import sys; from agent.selector import QwenToolSelector; assert 'mc4a_vqa.specialist' not in sys.modules"
+    subprocess.run([sys.executable, "-c", code], check=True, env={**os.environ, "PYTHONPATH": os.path.dirname(os.path.dirname(os.path.abspath(__file__)))})
 
 def test_26_qwen_isolation():
     # Mock works entirely disconnected from real weights

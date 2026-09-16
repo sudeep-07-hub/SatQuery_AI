@@ -1,137 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, GeoJSON, ImageOverlay } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, GeoJSON, ImageOverlay, useMap } from 'react-leaflet';
+import type { LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+interface ObservationInfo {
+  filename: string;
+  georeferenced: boolean;
+  bounds_wgs84: [[number, number], [number, number]] | null;
+  preview_url: string;
+}
+
 interface BeforeAfterViewerProps {
+  apiBase: string;
+  result: any;
   evidenceGraph: any;
-  files: any[];
-  jobId: string;
   selectedEvidenceId?: string | null;
 }
 
-export default function BeforeAfterViewer({ evidenceGraph, files, jobId, selectedEvidenceId }: BeforeAfterViewerProps) {
-  const [activeImage, setActiveImage] = useState<number>(0);
+function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
+  const map = useMap();
+  useEffect(() => {
+    map.fitBounds(bounds, { padding: [16, 16] });
+  }, [map, bounds]);
+  return null;
+}
+
+export default function BeforeAfterViewer({ apiBase, result, evidenceGraph, selectedEvidenceId }: BeforeAfterViewerProps) {
+  const observations: Record<string, ObservationInfo> = result?.observations || {};
+  const obsIds = Object.keys(observations).sort();
+  const overlay = result?.change_overlay;
+
+  const roleLabel = (id: string) => {
+    if (overlay?.before_observation === id) return 'Before';
+    if (overlay?.after_observation === id) return 'After';
+    return id.replace('_', ' ');
+  };
+
+  const [activeObs, setActiveObs] = useState<string>(overlay?.after_observation || obsIds[0]);
   const [showMask, setShowMask] = useState<boolean>(true);
   const [showRegions, setShowRegions] = useState<boolean>(true);
 
-  // Extract GeoJSON features from Evidence Graph, attaching evidence_id for styling
-  const features: any[] = [];
-  if (evidenceGraph && evidenceGraph.nodes) {
-    for (const node of evidenceGraph.nodes) {
-      if (node.type === 'evidence' && node.data?.spatial_region) {
-        // Clone feature and inject evidence_id into properties
-        const feature = {
-          ...node.data.spatial_region,
-          properties: {
-            ...node.data.spatial_region.properties,
-            evidence_id: node.data.evidence_id
-          }
-        };
-        features.push(feature);
-      }
-    }
-  }
+  if (obsIds.length === 0) return null;
+  const active = observations[activeObs] || observations[obsIds[0]];
 
-  // Calculate bounding box of all features to set map bounds
-  let center: [number, number] = [0, 0];
-  let zoom = 2;
-  let bounds: [[number, number], [number, number]] | null = null;
-  
-  if (features.length > 0 && features[0].geometry && features[0].geometry.coordinates) {
-    const coords = features[0].geometry.coordinates[0];
-    if (coords && coords.length > 0) {
-      center = [coords[0][1], coords[0][0]]; // Leaflet uses [lat, lng]
-      zoom = 14;
-      
-      // Calculate bounds for ImageOverlay (min/max lat/lng)
-      let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
-      for (const pt of coords) {
-        if (pt[1] < minLat) minLat = pt[1];
-        if (pt[1] > maxLat) maxLat = pt[1];
-        if (pt[0] < minLng) minLng = pt[0];
-        if (pt[0] > maxLng) maxLng = pt[0];
-      }
-      bounds = [[minLat, minLng], [maxLat, maxLng]];
-    }
-  }
+  const features = (evidenceGraph?.nodes || [])
+    .filter((n: any) => n.type === 'evidence' && n.data?.spatial_region && !n.data?.processing_parameters?.spatial_region_is_full_image)
+    .map((n: any) => ({
+      type: 'Feature',
+      geometry: n.data.spatial_region,
+      properties: { evidence_id: n.data.evidence_id },
+    }));
 
-  const getFeatureStyle = (feature: any) => {
-    const featureId = feature.properties?.evidence_id;
-    if (selectedEvidenceId) {
-      if (featureId === selectedEvidenceId) {
-        return { color: '#3b82f6', weight: 4, fillColor: '#3b82f6', fillOpacity: 0.2 };
-      }
-      return { color: '#9ca3af', weight: 1, fillColor: 'transparent' };
-    }
-    return { color: '#ef4444', weight: 2, fillColor: 'transparent' };
+  const featureStyle = (feature: any) => {
+    const selected = selectedEvidenceId && feature?.properties?.evidence_id === selectedEvidenceId;
+    if (selectedEvidenceId && !selected) return { color: '#9ca3af', weight: 1, fillOpacity: 0 };
+    return { color: selected ? '#3b82f6' : '#facc15', weight: selected ? 4 : 2, fillOpacity: selected ? 0.15 : 0 };
   };
 
+  const controls = (
+    <div className="viewer-controls">
+      {obsIds.length > 1 && (
+        <div className="toggle-group">
+          {obsIds.map((id) => (
+            <button key={id} className={`btn-toggle ${activeObs === id ? 'active' : ''}`} onClick={() => setActiveObs(id)}>
+              {roleLabel(id)}
+            </button>
+          ))}
+        </div>
+      )}
+      {overlay && (
+        <label className="viewer-check">
+          <input type="checkbox" checked={showMask} onChange={(e) => setShowMask(e.target.checked)} />
+          Change mask
+        </label>
+      )}
+      {features.length > 0 && (
+        <label className="viewer-check">
+          <input type="checkbox" checked={showRegions} onChange={(e) => setShowRegions(e.target.checked)} />
+          Evidence regions
+        </label>
+      )}
+    </div>
+  );
+
+  if (!active.georeferenced || !active.bounds_wgs84) {
+    return (
+      <div className="before-after-viewer">
+        {controls}
+        <div className="plain-viewer">
+          <img src={`${apiBase}${active.preview_url}`} alt={active.filename} />
+          {overlay && showMask && <img className="plain-viewer__overlay" src={`${apiBase}${overlay.url}`} alt="change mask" />}
+        </div>
+        <div className="viewer-note">Not georeferenced: shown in image coordinates.</div>
+      </div>
+    );
+  }
+
+  const bounds = active.bounds_wgs84 as LatLngBoundsExpression;
   return (
     <div className="before-after-viewer">
-      <div className="viewer-controls" style={{ display: 'flex', gap: '15px', marginBottom: '10px', flexWrap: 'wrap' }}>
-        {files.length > 1 && (
-          <div className="toggle-group" style={{ display: 'flex', gap: '5px' }}>
-            <button 
-              className={`btn-toggle ${activeImage === 0 ? 'active' : ''}`}
-              onClick={() => setActiveImage(0)}
-              style={{ padding: '4px 12px', borderRadius: '4px', border: '1px solid #ccc', background: activeImage === 0 ? '#3b82f6' : '#fff', color: activeImage === 0 ? '#fff' : '#333', cursor: 'pointer' }}
-            >
-              Time 1
-            </button>
-            <button 
-              className={`btn-toggle ${activeImage === 1 ? 'active' : ''}`}
-              onClick={() => setActiveImage(1)}
-              style={{ padding: '4px 12px', borderRadius: '4px', border: '1px solid #ccc', background: activeImage === 1 ? '#3b82f6' : '#fff', color: activeImage === 1 ? '#fff' : '#333', cursor: 'pointer' }}
-            >
-              Time 2
-            </button>
-          </div>
-        )}
-        
-        <div className="toggle-group" style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showMask} 
-              onChange={e => setShowMask(e.target.checked)} 
-            />
-            Show Change Mask
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showRegions} 
-              onChange={e => setShowRegions(e.target.checked)} 
-            />
-            Show Evidence Regions
-          </label>
-        </div>
-      </div>
-
-      <div className="map-view" style={{ height: '400px', width: '100%', borderRadius: '8px', overflow: 'hidden', position: 'relative', border: '1px solid #e5e7eb' }}>
-        <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%' }}>
-          <TileLayer
-            attribution='&copy; OpenStreetMap contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          
-          {showRegions && features.map((feature, idx) => (
-            <GeoJSON 
-              key={`region-${idx}-${selectedEvidenceId}`} 
-              data={feature} 
-              style={() => getFeatureStyle(feature)}
-            />
-          ))}
-
-          {showMask && bounds && (
-            <ImageOverlay
-              url={`http://localhost:8000/api/jobs/${jobId}/export/png`}
-              bounds={bounds}
-              opacity={0.6}
-            />
+      {controls}
+      <div className="map-view">
+        <MapContainer bounds={bounds} style={{ height: '100%', width: '100%' }}>
+          <FitBounds bounds={bounds} />
+          <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <ImageOverlay key={activeObs} url={`${apiBase}${active.preview_url}`} bounds={bounds} opacity={0.95} />
+          {overlay && showMask && overlay.bounds_wgs84 && (
+            <ImageOverlay url={`${apiBase}${overlay.url}`} bounds={overlay.bounds_wgs84} opacity={0.9} />
           )}
+          {showRegions && features.map((feature: any) => (
+            <GeoJSON key={`${feature.properties.evidence_id}-${selectedEvidenceId}`} data={feature} style={() => featureStyle(feature)} />
+          ))}
         </MapContainer>
       </div>
+      <div className="viewer-note">{active.filename} · {roleLabel(activeObs)}</div>
     </div>
   );
 }

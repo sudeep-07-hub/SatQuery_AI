@@ -986,3 +986,101 @@ body {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* ── Demo prototype additions ── */
+.app-header__actions { display: flex; align-items: center; gap: 12px; }
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: var(--radius-base);
+  padding: 4px 8px; cursor: pointer; color: var(--ink); font-family: var(--font-sans); font-size: 13px;
+}
+.pill {
+  display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px;
+  border: 1px solid var(--border); background: var(--surface-sunken); color: var(--ink-muted);
+  font: var(--text-small); white-space: nowrap;
+}
+.pill--warn { border-color: var(--warning); color: var(--warning); }
+.planner-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: -0.75rem 0 1rem; }
+
+.confidence-badge { flex-direction: column; align-items: flex-end; gap: 0; background: none; line-height: 1.3; }
+.confidence-badge--high { color: var(--success); }
+.confidence-badge--medium { color: var(--warning); }
+.confidence-badge--low { color: var(--error); }
+.conf-value { font-weight: 400; font-size: 12px; }
+
+.stat-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem; }
+.stat {
+  display: flex; flex-direction: column; min-width: 120px; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-base); background: var(--surface-sunken);
+}
+.stat__value { font: var(--text-h3); color: var(--ink); }
+.stat__label { font: var(--text-small); color: var(--ink-muted); }
+
+.caveats-section {
+  margin-bottom: 1.25rem; padding: 10px 14px; border-left: 4px solid var(--warning);
+  background: var(--primary-tint); color: var(--ink); font: var(--text-small);
+}
+.caveats-section ul { margin: 6px 0 0 18px; }
+
+.error-details { margin-top: 10px; padding: 10px 14px; border-radius: var(--radius-base); background: var(--surface-sunken); font: var(--text-small); }
+.error-details ul { margin: 6px 0 0 18px; color: var(--error); }
+.result-panel--error .final-answer { margin-top: 1rem; font-size: 1rem; }
+
+.evidence-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
+.evidence-card {
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-base);
+  background: var(--surface); cursor: pointer; transition: border-color var(--transition-fast);
+}
+.evidence-card:hover { border-color: var(--secondary); }
+.evidence-card--selected { border: 2px solid #3b82f6; }
+.evidence-card--rejected { opacity: 0.6; text-decoration: line-through; }
+.evidence-card__claim { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.evidence-card__meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--ink-muted); }
+
+.before-after-viewer { margin-top: 1rem; }
+.viewer-controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 10px; }
+.toggle-group { display: flex; gap: 4px; }
+.btn-toggle {
+  padding: 4px 12px; border-radius: var(--radius-base); border: 1px solid var(--border);
+  background: var(--surface); color: var(--ink); cursor: pointer; font-family: var(--font-sans);
+}
+.btn-toggle.active { background: var(--secondary); border-color: var(--secondary); color: #fff; }
+.viewer-check { display: flex; align-items: center; gap: 5px; font-size: 14px; cursor: pointer; }
+.map-view { height: 420px; width: 100%; border-radius: var(--radius-base); overflow: hidden; border: 1px solid var(--border); }
+.plain-viewer { position: relative; display: inline-block; max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-base); overflow: hidden; }
+.plain-viewer img { display: block; width: 420px; max-width: 100%; image-rendering: pixelated; }
+.plain-viewer__overlay { position: absolute; inset: 0; width: 100% !important; height: 100%; }
+.viewer-note { margin-top: 6px; font: var(--text-small); color: var(--ink-muted); }
+
+.exports-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
+.exports-section h3 { font-size: 14px; margin-bottom: 10px; color: var(--ink-muted); }
+.export-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.export-link {
+  padding: 6px 12px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-base);
+  text-decoration: none; color: var(--ink); font-size: 13px;
+}
+
+.example-queries { display: flex; flex-wrap: wrap; gap: 6px; margin: -8px 0 16px; }
+.example-query {
+  padding: 3px 10px; border-radius: 9999px; border: 1px dashed var(--border); background: none;
+  color: var(--ink-muted); font: var(--text-small); cursor: pointer; text-align: left;
+}
+.example-query:hover { border-color: var(--primary); color: var(--primary); }
+
+.file-card__role { padding: 6px 10px; font: var(--text-small); color: var(--ink-muted); border-top: 1px solid var(--border); }
+
+.engine-list { margin-top: 20px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-base); background: var(--surface); }
+.engine-list__title { font: var(--text-small); font-weight: 600; margin-bottom: 8px; }
+.engine-list__item { display: flex; align-items: center; gap: 8px; font: var(--text-small); padding: 2px 0; }
+.engine-list__reason { margin-left: auto; color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot--ok { background: var(--success); }
+.dot--off { background: var(--border); border: 1px solid var(--ink-muted); }
+
+.empty-state__hint { margin-top: 8px; font: var(--text-small); color: var(--ink-muted); }
+.trace-item--query_intelligence, .trace-item--tool_selection { border-left-color: #8b5cf6; }
+.trace-item--observation_binding, .trace-item--workflow_planning { border-left-color: #d946ef; }
+.trace-item--agentic_execution { border-left-color: #f59e0b; }
+.trace-item--evidence_normalization { border-left-color: #10b981; }
+.trace-item--verification { border-left-color: #06b6d4; }
+.trace-item--answer_synthesis { border-left-color: #6366f1; }
+.trace-item--model_unavailable, .trace-item--insufficient_observations { border-left-color: #ef4444; }
