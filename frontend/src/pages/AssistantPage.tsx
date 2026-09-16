@@ -1,10 +1,13 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import UploadZone from '../components/UploadZone';
 import QueryBox from '../components/QueryBox';
 import AnalyzeButton from '../components/AnalyzeButton';
 import TracePanel, { type TraceEntry } from '../components/results/TracePanel';
 import ResultPanel from '../components/results/ResultPanel';
 import type { UploadedFile } from '../components/UploadZone';
+import ChatSidebar from '../components/assistant/ChatSidebar';
+import ChatThread from '../components/assistant/ChatThread';
+import { useChatSessions } from '../hooks/useChatSessions';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000';
 
@@ -39,6 +42,10 @@ export default function AssistantPage() {
   const [result, setResult] = useState<any>(null);
   const [evidenceGraph, setEvidenceGraph] = useState<any>(null);
   const [system, setSystem] = useState<SystemStatus | null>(null);
+
+  const chats = useChatSessions();
+  // Session that submitted the in-flight query; its assistant turn is recorded when the job ends
+  const pendingSessionRef = useRef<string | null>(null);
 
   // Re-open a finished or running job from a shareable link: ?job=<job_id>
   useEffect(() => {
@@ -87,7 +94,22 @@ export default function AssistantPage() {
           clearInterval(interval);
 
           const res = await fetch(`${API_BASE}/api/jobs/${jobId}/result`);
-          if (res.ok) setResult((await res.json()).result);
+          const jobResult = res.ok ? (await res.json()).result : null;
+          setResult(jobResult);
+
+          if (pendingSessionRef.current) {
+            chats.appendMessage(pendingSessionRef.current, {
+              role: 'assistant',
+              content: jobResult?.final_answer ?? `The request ended with status ${statusData.status}.`,
+              confidence: typeof jobResult?.confidence === 'number'
+                ? { value: jobResult.confidence, source: 'model_confidence_uncalibrated' }
+                : undefined,
+              status: statusData.status,
+              jobId,
+              timestamp: new Date().toISOString(),
+            });
+            pendingSessionRef.current = null;
+          }
 
           const egRes = await fetch(`${API_BASE}/api/jobs/${jobId}/evidence_graph`);
           if (egRes.ok) setEvidenceGraph((await egRes.json()).evidence_graph);
@@ -126,6 +148,15 @@ export default function AssistantPage() {
 
     if (hasError) return;
 
+    const sessionId = chats.ensureActiveSession();
+    chats.appendMessage(sessionId, {
+      role: 'user',
+      content: query.trim(),
+      attachments: files.map((f) => ({ name: f.file.name, size: f.file.size, type: f.file.type })),
+      timestamp: new Date().toISOString(),
+    });
+    pendingSessionRef.current = sessionId;
+
     setLoading(true);
     setJobId(null);
     setStatus(null);
@@ -156,14 +187,64 @@ export default function AssistantPage() {
           ? `Cannot reach the backend at ${API_BASE}. Check that uvicorn is running and that it allows this page's origin (${window.location.origin}).`
           : message
       );
+      chats.appendMessage(sessionId, {
+        role: 'assistant',
+        content: 'The request could not be sent to the backend, so no analysis was run.',
+        status: 'FAILED',
+        timestamp: new Date().toISOString(),
+      });
+      pendingSessionRef.current = null;
       setLoading(false);
     }
-  }, [files, query]);
+  }, [files, query, chats]);
+
+  /** Clears the live job view (used when switching chats) without touching stored history. */
+  const resetWorkspace = useCallback(() => {
+    setJobId(null);
+    setStatus(null);
+    setTrace([]);
+    setResult(null);
+    setEvidenceGraph(null);
+    setUploadError(null);
+    setQueryError(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('job')) {
+      url.searchParams.delete('job');
+      window.history.replaceState(null, '', url.toString());
+    }
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    if (loading) return;
+    chats.newChat();
+    resetWorkspace();
+    setFiles([]);
+    setQuery('');
+  }, [loading, chats, resetWorkspace]);
+
+  const handleSelectSession = useCallback((id: string) => {
+    if (loading || id === chats.activeId) return;
+    chats.selectSession(id);
+    resetWorkspace();
+  }, [loading, chats, resetWorkspace]);
 
   const isTerminal = status !== null && TERMINAL_STATES.includes(status);
 
   return (
-    <>
+    <div className={`assistant-layout ${chats.collapsed ? 'assistant-layout--collapsed' : ''}`}>
+      <ChatSidebar
+        sessions={chats.sessions}
+        activeId={chats.activeId}
+        collapsed={chats.collapsed}
+        busy={loading}
+        onToggleCollapsed={() => chats.setCollapsed(!chats.collapsed)}
+        onNewChat={handleNewChat}
+        onSelect={handleSelectSession}
+        onDelete={chats.deleteSession}
+      />
+
+      <div className="assistant-center">
+      <ChatThread session={chats.activeSession} />
 
       <main className="app-main">
         {/* ── Left Panel: Inputs ── */}
@@ -254,6 +335,7 @@ export default function AssistantPage() {
           )}
         </section>
       </main>
-    </>
+      </div>
+    </div>
   );
 }
