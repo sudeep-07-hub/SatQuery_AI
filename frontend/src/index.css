@@ -1146,6 +1146,62 @@ body {
   .navbar__github-label { display: inline; }
 }
 
-/* Home route (Phase 1 stub; content in Phase 2) */
-.home { flex: 1; padding: var(--spacing-48) 32px; }
-.home__headline { font: var(--text-display); color: var(--ink); }
+/* ── Home page — existing tokens only ── */
+.home { flex: 1; padding: var(--spacing-64) 32px; }
+.home__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: var(--spacing-48);
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.home__text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-16); }
+.home__headline { font: var(--text-display); color: var(--ink); letter-spacing: -0.01em; }
+.home__lead { font: var(--text-body); color: var(--ink-muted); max-width: 56ch; }
+.home__cta {
+  margin-top: var(--spacing-8);
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 24px;
+  border-radius: var(--radius-base);
+  background: var(--primary);
+  color: var(--surface);
+  font: var(--text-h3);
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+.home__cta:hover { background: var(--primary-hover); }
+.home__cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.home__visual {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-24);
+}
+.home__visual-title {
+  font: var(--text-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  margin-bottom: var(--spacing-16);
+}
+.home__steps { list-style: none; display: flex; flex-direction: column; }
+.home__step {
+  display: flex;
+  gap: var(--spacing-12);
+  padding: var(--spacing-12) 0;
+  border-top: 1px solid var(--border);
+}
+.home__step:first-child { border-top: none; padding-top: 0; }
+.home__step-index { font: var(--text-mono); color: var(--primary); }
+.home__step-body { display: flex; flex-direction: column; }
+.home__step-label { font: var(--text-h3); color: var(--ink); }
+.home__step-detail { font: var(--text-mono); color: var(--ink-muted); }
+
+@media (max-width: 900px) {
+  .home { padding: var(--spacing-32) 16px; }
+  .home__hero { grid-template-columns: 1fr; gap: var(--spacing-32); }
+  .home__headline { font: var(--text-h1); }
+}
