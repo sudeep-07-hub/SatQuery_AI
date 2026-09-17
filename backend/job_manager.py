@@ -20,6 +20,7 @@ Planner / LLM configuration (environment):
 """
 import asyncio
 import os
+import shutil
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Optional, List
@@ -60,10 +61,34 @@ TERMINAL_STATUSES = [
 
 
 class JobRegistry:
-    def __init__(self):
+    """
+    In-memory job store. Finished jobs keep their loaded rasters, so on small hosts the number of
+    retained jobs is capped (SATQUERY_MAX_JOBS, 0 = unlimited): the oldest finished jobs are evicted
+    together with their uploaded files and exports.
+    """
+    def __init__(self, max_jobs: Optional[int] = None):
         self._jobs: Dict[str, Dict] = {}
+        self.max_jobs = max_jobs if max_jobs is not None else int(os.getenv("SATQUERY_MAX_JOBS", "0"))
+
+    def _evict_finished(self):
+        if self.max_jobs <= 0:
+            return
+        finished = [jid for jid, job in self._jobs.items() if job["status"] in TERMINAL_STATUSES]
+        while len(self._jobs) >= self.max_jobs and finished:
+            jid = finished.pop(0)  # dicts keep insertion order: oldest first
+            job = self._jobs.pop(jid)
+            paths = list((job.get("exports") or {}).values())
+            if job.get("change_overlay_png"):
+                paths.append(job["change_overlay_png"])
+            for path in paths:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+            shutil.rmtree(os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads", jid), ignore_errors=True)
 
     def create_job(self) -> str:
+        self._evict_finished()
         job_id = str(uuid.uuid4())
         self._jobs[job_id] = {
             "job_id": job_id,
@@ -98,6 +123,11 @@ for capability in registry.list_capabilities():
 adapters = build_adapters("real")
 
 
+# Capabilities switched off for a deployment regardless of local model availability (e.g. on a
+# 512 MB host where loading PaliGemma would exhaust memory): comma-separated tool ids.
+DISABLED_TOOLS = {t.strip() for t in os.getenv("SATQUERY_DISABLED_TOOLS", "").split(",") if t.strip()}
+
+
 def build_job_registry(execution_mode: str, job_adapters: Dict) -> tuple:
     """
     Per-job Tool Registry. In real mode each capability is enabled only if its engine can run here,
@@ -112,6 +142,8 @@ def build_job_registry(execution_mode: str, job_adapters: Dict) -> tuple:
             available, reason = True, "fixture mode"
         elif adapter is None:
             available, reason = False, "no execution adapter"
+        elif capability.tool_id in DISABLED_TOOLS:
+            available, reason = False, "DISABLED: turned off for this deployment (SATQUERY_DISABLED_TOOLS)"
         else:
             available, reason = adapter.availability()
         capability.enabled = available

@@ -37,7 +37,29 @@ npm run preview        # serves dist/ with SPA fallback on http://localhost:4173
 Only the static frontend is deployed. The backend runs separately and must be reachable over **HTTPS** from the
 browser: a page served over `https://` cannot call an `http://` API (mixed content is blocked).
 
-### 1. Expose the backend over HTTPS
+### 1. Host the backend over HTTPS
+
+**Option A — Render free tier (no local machine needed, reduced capability).** `render.yaml` at the
+repository root is a Render Blueprint: in Render choose *New → Blueprint*, connect this repository, and apply.
+It builds `backend/` with `requirements-render.txt` (CPU-only PyTorch, no model weights) and runs it with:
+
+| Setting | Value | Why |
+|---|---|---|
+| `SATQUERY_QWEN_BACKEND` | `none` | No LLM fits in 512 MB; tool selection uses the Tool Registry rules and answers use the evidence-only template |
+| `SATQUERY_DISABLED_TOOLS` | `single_image_vqa,optical_sar_fusion` | PaliGemma and CROMA need several GB of RAM |
+| `SATQUERY_ALLOWED_ORIGINS` | the Vercel site | CORS |
+| `SATQUERY_MAX_UPLOAD_MB` | `20` | Uploads are held in memory |
+| `SATQUERY_MAX_JOBS` | `15` | Finished jobs keep their rasters in memory; oldest are evicted |
+
+What works there: change detection (classical SAR/optical), evidence, map overlays, exports. Single-image
+questions are answered with an explicit "disabled on this deployment" message. The free plan sleeps after
+15 minutes without traffic (the next request takes about a minute), and its disk is wiped on restart, so shared
+`?job=` links do not survive a sleep. Measured locally with the same packages on Python 3.12: ~234 MB idle,
+~284 MB after several change jobs.
+
+Then set `VITE_API_BASE=https://<service>.onrender.com` in Vercel and redeploy.
+
+**Option B — full stack on the development Mac through a tunnel** (Qwen3, PaliGemma; the Mac must stay on):
 
 The backend needs local model weights and Ollama, so it currently runs on the development Mac. For a demo, a
 Cloudflare quick tunnel works well:
