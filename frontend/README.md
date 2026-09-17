@@ -62,6 +62,28 @@ loads) unless every request sends an `ngrok-skip-browser-warning` header, which 
 `dist`, from `netlify.toml`) → add environment variable `VITE_API_BASE=https://<tunnel-host>` → Deploy.
 
 Both configs rewrite unknown paths to `index.html`, so `/assistant` and shared `?job=` links load directly.
+Missing files under `/assets/` return 404 instead of the HTML page.
+
+**CLI alternative (Vercel)** — from this `frontend/` directory:
+
+```bash
+npx vercel link --project satquery-ai
+printf '%s' "https://<tunnel-host>" | npx vercel env add VITE_API_BASE production
+printf '%s' "https://<tunnel-host>" | npx vercel env add VITE_API_BASE preview --yes
+npx vercel deploy          # preview
+npx vercel deploy --prod   # production
+```
+
+Pitfalls seen during the first deployment:
+
+- Set `VITE_API_BASE` as a **project environment variable**, not only with `--build-env`: `vercel promote`
+  rebuilds for production with the project's variables, and a missing value silently falls back to
+  `http://localhost:8000`, which an HTTPS page cannot call.
+- A project's **first** deployment is always assigned to production.
+- Preview URLs are behind Vercel Deployment Protection (login required); use `npx vercel curl <path>
+  --deployment <url>` to check them, or open them while logged in.
+- A brand-new `*.trycloudflare.com` hostname can take a while to resolve on the machine that created it
+  (negative DNS cache) even though it already works elsewhere.
 
 ### 3. Allow the deployed origin on the backend
 
