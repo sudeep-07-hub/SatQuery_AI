@@ -5,8 +5,17 @@ import os
 
 app = FastAPI(title="SatQuery AI", version="0.2.0")
 
+# Deployed frontends (e.g. a Vercel/Netlify URL) are allowed explicitly via a comma-separated env var:
+#   SATQUERY_ALLOWED_ORIGINS=https://satquery.vercel.app,https://satquery.netlify.app
+EXTRA_ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("SATQUERY_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=EXTRA_ALLOWED_ORIGINS,
     # Any local dev-server port: Vite moves to 5174, 5175, ... when 5173 is taken
     allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
