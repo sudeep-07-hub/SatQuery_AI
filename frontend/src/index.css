@@ -1146,8 +1146,8 @@ body {
   .navbar__github-label { display: inline; }
 }
 
-/* ── Home page — existing tokens only ── */
-.home { flex: 1; padding: var(--spacing-64) 32px; }
+/* ── Home page — existing tokens only (no new colours or font families) ── */
+.home { flex: 1; padding: var(--spacing-64) 32px; overflow-x: clip; }  /* the orbit extends past the text column */
 .home__hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
@@ -1156,54 +1156,128 @@ body {
   max-width: 1200px;
   margin: 0 auto;
 }
-.home__text { display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-16); }
-.home__headline { font: var(--text-display); color: var(--ink); letter-spacing: -0.01em; }
-.home__lead { font: var(--text-body); color: var(--ink-muted); max-width: 56ch; }
+.home__text {
+  position: relative;
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: var(--spacing-16);
+}
+.home__text > * { position: relative; z-index: 1; }
+
+/* Typographic hierarchy from the existing IBM Plex Sans weights (400/450/600) */
+.home__headline {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: clamp(34px, 4.6vw, 56px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  max-width: 18ch;
+}
+.home__lead { font: var(--text-body); font-size: 16px; line-height: 1.7; color: var(--ink-muted); max-width: 54ch; }
+
+/* One deliberate CTA interaction: lift (the app's existing button language) + arrow shift */
 .home__cta {
   margin-top: var(--spacing-8);
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 24px;
+  display: inline-flex; align-items: center; gap: var(--spacing-8);
+  padding: 13px 26px;
   border-radius: var(--radius-base);
   background: var(--primary);
   color: var(--surface);
   font: var(--text-h3);
   text-decoration: none;
-  transition: background var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
-.home__cta:hover { background: var(--primary-hover); }
+.home__cta:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.home__cta:active { transform: translateY(0); }
+.home__cta-arrow { transition: transform var(--transition-fast); }
+.home__cta:hover .home__cta-arrow { transform: translateX(3px); }
 .home__cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.home__visual {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-base);
-  padding: var(--spacing-24);
+
+/* Orbit backdrop: quiet, decorative, behind the hero text */
+.orbit {
+  position: absolute;
+  inset: -12% auto auto -14%;
+  width: min(560px, 46vw);
+  aspect-ratio: 1;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
 }
-.home__visual-title {
-  font: var(--text-small);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-muted);
-  margin-bottom: var(--spacing-16);
+.orbit__svg { width: 100%; height: 100%; overflow: visible; }
+.orbit__ring { fill: none; stroke: var(--border); stroke-width: 1.5; }
+.orbit__ring--inner { stroke-dasharray: 3 9; }
+.orbit__planet { fill: var(--surface-sunken); }
+.orbit__satellite {
+  position: absolute; top: 0; left: 0;
+  width: 9px; height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 2px;
+  background: var(--primary);
+  /* ellipse rx 250 ry 150 rotated -18° around (300,300), mapped into this box (600 units wide) */
+  offset-path: path("M 537 223 A 250 150 -18 1 1 63 377 A 250 150 -18 1 1 537 223");
+  offset-rotate: auto;
+  animation: satellite-orbit 48s linear infinite;
 }
-.home__steps { list-style: none; display: flex; flex-direction: column; }
-.home__step {
-  display: flex;
-  gap: var(--spacing-12);
-  padding: var(--spacing-12) 0;
-  border-top: 1px solid var(--border);
+@keyframes satellite-orbit {
+  to { offset-distance: 100%; }
 }
-.home__step:first-child { border-top: none; padding-top: 0; }
-.home__step-index { font: var(--text-mono); color: var(--primary); }
-.home__step-body { display: flex; flex-direction: column; }
+
+/* Pipeline: a thin rail links the six steps instead of a floating card */
+.home__visual { padding: var(--spacing-8) 0 var(--spacing-8) var(--spacing-8); }
+.home__visual-lead { font: var(--text-body); color: var(--ink-muted); margin-bottom: var(--spacing-16); }
+.home__steps { list-style: none; position: relative; padding-left: var(--spacing-24); }
+.home__steps::before {
+  content: '';
+  position: absolute; top: 6px; bottom: 6px; left: 6px;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--border), var(--primary-tint), var(--border));
+}
+.home__step { position: relative; }
+.home__step::before {
+  content: '';
+  position: absolute; left: -22px; top: 18px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.home__step:hover::before, .home__step--open::before { background: var(--primary); border-color: var(--primary); }
+.home__step-button {
+  display: flex; gap: var(--spacing-12); width: 100%; text-align: left;
+  padding: var(--spacing-12) var(--spacing-12) var(--spacing-12) 0;
+  background: none; border: none; border-radius: var(--radius-base);
+  font-family: var(--font-sans); color: var(--ink); cursor: pointer;
+}
+.home__step-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.home__step-index { font: var(--text-mono); color: var(--ink-muted); padding-top: 2px; }
+.home__step:hover .home__step-index, .home__step--open .home__step-index { color: var(--primary); }
+.home__step-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .home__step-label { font: var(--text-h3); color: var(--ink); }
-.home__step-detail { font: var(--text-mono); color: var(--ink-muted); }
+.home__step-detail { font: var(--text-small); color: var(--ink-muted); }
+/* Expand on hover or click; grid-rows animation avoids reflow jumps and keeps CLS at 0 */
+.home__step-more {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows var(--transition-normal);
+}
+.home__step:hover .home__step-more, .home__step--open .home__step-more { grid-template-rows: 1fr; }
+.home__step-more > span {
+  overflow: hidden;
+  font: var(--text-mono);
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+.home__step:hover .home__step-more > span, .home__step--open .home__step-more > span { padding-top: 6px; }
 
 @media (max-width: 900px) {
   .home { padding: var(--spacing-32) 16px; }
   .home__hero { grid-template-columns: 1fr; gap: var(--spacing-32); }
-  .home__headline { font: var(--text-h1); }
+  .home__headline { font-size: clamp(28px, 7vw, 34px); max-width: none; }
+  .orbit { width: 78vw; inset: -8% auto auto -22%; opacity: 0.35; }
+}
+
+/* Motion is decorative only: freeze the orbit and drop the transitions when asked to reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .orbit__satellite { animation: none; offset-distance: 12%; }
+  .home__cta, .home__cta-arrow, .home__step-more, .home__step::before { transition: none; }
 }
 
 /* ── Assistant: sidebar + chat panel — existing tokens only ── */
