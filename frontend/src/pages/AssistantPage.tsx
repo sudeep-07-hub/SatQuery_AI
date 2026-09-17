@@ -8,7 +8,8 @@ import { useChatSessions } from '../hooks/useChatSessions';
 import type { ChatMessage } from '../lib/chatStorage';
 import { snapshotJob, TERMINAL_STATES } from '../lib/jobResponse';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000';
+// Backend base URL from the build-time env var (see frontend/.env.example); trailing slashes are tolerated
+const API_BASE = (import.meta.env.VITE_API_BASE ?? 'http://localhost:8000').replace(/\/+$/, '');
 const POLL_MS = 1500;
 const MAX_POLL_FAILURES = 20; // ~30 s without contact
 
