@@ -197,8 +197,24 @@ export default function AssistantPage() {
       const formData = new FormData();
       files.forEach((f) => formData.append('files', f.file));
       formData.append('query', question);
-      const response = await fetch(`${API_BASE}/api/query`, { method: 'POST', body: formData });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      let response: Response;
+      try {
+        response = await fetch(`${API_BASE}/api/query`, { method: 'POST', body: formData });
+      } catch {
+        throw new Error('unreachable');
+      }
+      if (!response.ok) {
+        // The server answered but refused the request (e.g. 413 upload too large): show its reason, not "unreachable"
+        const detail = await response.json().then((b) => (typeof b?.detail === 'string' ? b.detail : null)).catch(() => null);
+        appendMessage(sessionId, {
+          role: 'assistant',
+          content: detail ?? `The backend rejected the request (HTTP ${response.status}), so no analysis was run.`,
+          status: 'FAILED',
+          error: `http_${response.status}`,
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
       const data = await response.json();
       setStage('QUEUED');
       setPending({ jobId: data.job_id, sessionId });
@@ -233,7 +249,7 @@ export default function AssistantPage() {
   const availableTools = system?.tools.filter((t) => t.available) ?? [];
   const pendingStage = pending && pending.sessionId === chats.activeId
     ? (STAGE_LABELS[stage] ?? stage.toLowerCase())
-    : submitting ? 'sending the request' : null;
+    : submitting ? 'sending the request (a sleeping server can take about a minute to wake up)' : null;
 
   return (
     <div className={`assistant-layout ${chats.collapsed ? 'assistant-layout--collapsed' : ''}`}>

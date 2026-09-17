@@ -29,6 +29,9 @@ from job_manager import job_registry, execute_agentic_pipeline, build_job_regist
 from agent.adapters import build_adapters
 from qwen import engine_factory
 from fastapi import BackgroundTasks, HTTPException
+
+# Optional cap on the combined size of uploaded images per request (0 = unlimited)
+MAX_UPLOAD_BYTES = int(float(os.getenv("SATQUERY_MAX_UPLOAD_MB", "0")) * 1024 * 1024)
 from fastapi.responses import JSONResponse, FileResponse, Response
 
 @app.post("/api/validate")
@@ -53,13 +56,20 @@ async def submit_query(
     Submits a query to the full MC1->MC8 pipeline.
     Returns a job_id immediately.
     """
-    job_id = job_registry.create_job()
-
     # Read files into memory so we don't hold file handles open across async bounds
     files_data = []
+    total_bytes = 0
     for f in files:
         content = await f.read()
+        total_bytes += len(content)
+        if MAX_UPLOAD_BYTES and total_bytes > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Upload too large: the images together exceed {MAX_UPLOAD_BYTES // (1024 * 1024)} MB on this server.",
+            )
         files_data.append((f.filename, content))
+
+    job_id = job_registry.create_job()
 
     background_tasks.add_task(execute_agentic_pipeline, job_id, files_data, query)
     return {"job_id": job_id}

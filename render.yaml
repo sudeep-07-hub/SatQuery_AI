@@ -1,0 +1,32 @@
+# Render Blueprint — SatQuery backend on the free web-service plan.
+# In Render: New → Blueprint → connect this repository → Apply.
+#
+# Free plan limits: 512 MB RAM, 0.1 CPU, sleeps after 15 min without traffic (≈1 min to wake),
+# ephemeral disk (jobs, uploads and exports disappear on restart/sleep).
+# Capability on this plan: Tool Registry rules (no Qwen3), classical change detection, exports.
+# Single-image VQA (PaliGemma) and optical+SAR fusion (CROMA) are disabled: they need GBs of RAM.
+services:
+  - type: web
+    name: satquery-backend
+    runtime: python
+    plan: free
+    region: singapore
+    branch: demo-prototype-and-web-app
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements-render.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/system
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: SATQUERY_QWEN_BACKEND
+        value: none
+      - key: SATQUERY_DISABLED_TOOLS
+        value: single_image_vqa,optical_sar_fusion
+      - key: SATQUERY_ALLOWED_ORIGINS
+        value: https://satquery-ai-xi.vercel.app
+      - key: SATQUERY_MAX_UPLOAD_MB
+        value: "20"
+      - key: SATQUERY_MAX_JOBS
+        value: "15"
