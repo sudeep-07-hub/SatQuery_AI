@@ -25,7 +25,7 @@ app.add_middleware(
 
 
 from mc1.pipeline import run_mc1_pipeline
-from job_manager import job_registry, execute_agentic_pipeline, build_job_registry, TERMINAL_STATUSES
+from job_manager import job_registry, run_agentic_pipeline_sync, build_job_registry, TERMINAL_STATUSES
 from agent.adapters import build_adapters
 from qwen import engine_factory
 from fastapi import BackgroundTasks, HTTPException
@@ -71,7 +71,8 @@ async def submit_query(
 
     job_id = job_registry.create_job()
 
-    background_tasks.add_task(execute_agentic_pipeline, job_id, files_data, query)
+    # Sync callable → Starlette runs it in a worker thread, keeping the event loop free
+    background_tasks.add_task(run_agentic_pipeline_sync, job_id, files_data, query)
     return {"job_id": job_id}
 
 @app.get("/api/system")

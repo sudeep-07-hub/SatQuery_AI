@@ -507,6 +507,15 @@ def _fixture_smoke_intent(query: str) -> QueryIntelligenceResult:
     )
 
 
+def run_agentic_pipeline_sync(job_id: str, files_data: List[tuple], query: str, **kwargs) -> None:
+    """
+    Entry point for API background tasks. Starlette runs *sync* background functions in a worker
+    thread, so the pipeline's blocking work (raster IO, model inference, LLM HTTP calls) stays off
+    the server's event loop and status polls keep responding while a job runs.
+    """
+    asyncio.run(execute_agentic_pipeline(job_id, files_data, query, **kwargs))
+
+
 async def execute_agentic_pipeline(
     job_id: str,
     files_data: List[tuple],
