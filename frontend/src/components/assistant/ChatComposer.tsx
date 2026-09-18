@@ -13,6 +13,30 @@ interface ChatComposerProps {
   onError: (error: string | null) => void;
 }
 
+/**
+ * Attachment chip. PNG/JPEG show the real image; browsers cannot decode GeoTIFF, so those show a
+ * labelled tile until the backend returns its own rendering of the raster.
+ */
+function AttachmentChip({ file, index, count, disabled, onRemove }: {
+  file: UploadedFile; index: number; count: number; disabled: boolean; onRemove: () => void;
+}) {
+  return (
+    <span className="attachment">
+      <span className="attachment__thumb">
+        {file.previewUrl
+          ? <img src={file.previewUrl} alt="" />
+          : <span className="attachment__thumb-label">TIFF</span>}
+      </span>
+      <span className="attachment__text">
+        <span className="attachment__role">{attachmentLabel(index, count)}</span>
+        <span className="attachment__name" title={file.file.name}>{file.file.name}</span>
+        <span className="attachment__size">{formatSize(file.file.size)}</span>
+      </span>
+      <button className="attachment__remove" onClick={onRemove} disabled={disabled} aria-label={`Remove ${file.file.name}`}>×</button>
+    </span>
+  );
+}
+
 export default function ChatComposer({
   files, onFilesChange, prompt, onPromptChange, onSend, inFlight, error, onError,
 }: ChatComposerProps) {
@@ -47,24 +71,23 @@ export default function ChatComposer({
         onChange={handleInputChange}
       />
 
+      {isDragActive && (
+        <div className="chat-composer__scan" aria-hidden="true"><span>Drop imagery to attach</span></div>
+      )}
+
       {files.length > 0 && (
-        <div className="chat-chips chat-composer__chips">
+        <div className={`attachments ${files.length === 2 ? 'attachments--pair' : ''}`}>
           {files.map((f, i) => (
-            <span key={f.id} className="chat-chip">
-              <span className="chat-chip__label">{attachmentLabel(i, files.length)}</span>
-              <span className="chat-chip__name" title={f.file.name}>{f.file.name}</span>
-              <span className="chat-chip__size">{formatSize(f.file.size)}</span>
-              <button
-                className="chat-chip__remove"
-                onClick={() => handleRemove(f.id)}
-                disabled={inFlight}
-                aria-label={`Remove ${f.file.name}`}
-              >
-                ×
-              </button>
-            </span>
+            <AttachmentChip
+              key={f.id}
+              file={f}
+              index={i}
+              count={files.length}
+              disabled={inFlight}
+              onRemove={() => handleRemove(f.id)}
+            />
           ))}
-          {files.length === 2 && <span className="chat-composer__pair-note">Both images are sent together.</span>}
+          {files.length === 2 && <span className="attachments__note">sent together as one bi-temporal pair</span>}
         </div>
       )}
 

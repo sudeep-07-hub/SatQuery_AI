@@ -4,43 +4,54 @@ interface ChatSidebarProps {
   sessions: ChatSession[];
   activeId: string | null;
   collapsed: boolean;
+  /** Narrow screens show the sidebar as an off-canvas drawer; this is its open state. */
+  drawerOpen: boolean;
   /** True while a query is running: switching sessions would orphan the in-flight response. */
   busy: boolean;
   onToggleCollapsed: () => void;
+  onCloseDrawer: () => void;
   onNewChat: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
 export default function ChatSidebar({
-  sessions, activeId, collapsed, busy, onToggleCollapsed, onNewChat, onSelect, onDelete,
+  sessions, activeId, collapsed, drawerOpen, busy, onToggleCollapsed, onCloseDrawer, onNewChat, onSelect, onDelete,
 }: ChatSidebarProps) {
+  // On narrow screens the same control dismisses the drawer instead of shrinking it to a rail.
+  const isDrawer = () => window.matchMedia('(max-width: 900px)').matches;
+
   return (
-    <aside className={`chat-sidebar ${collapsed ? 'chat-sidebar--collapsed' : ''}`} aria-label="Chat history">
+    <aside
+      className={`chat-sidebar ${collapsed ? 'chat-sidebar--collapsed' : ''} ${drawerOpen ? 'chat-sidebar--open' : ''}`}
+      aria-label="Chat history"
+    >
       <div className="chat-sidebar__header">
-        {/* Same toggle pattern as the JSON viewer (▾ glyph rotated by the --open modifier) */}
+        {/* The SatQuery mark stays visible in both states */}
+        <span className="chat-sidebar__mark app-header__icon" aria-hidden="true">🛰</span>
         <button
           className="chat-sidebar__toggle"
-          onClick={onToggleCollapsed}
+          onClick={() => (isDrawer() ? onCloseDrawer() : onToggleCollapsed())}
           aria-expanded={!collapsed}
           aria-label={collapsed ? 'Expand chat history' : 'Collapse chat history'}
           title={collapsed ? 'Expand chat history' : 'Collapse chat history'}
         >
           <span className={`json-viewer__toggle chat-sidebar__toggle-icon ${collapsed ? '' : 'json-viewer__toggle--open'}`}>▾</span>
         </button>
-        <button
-          className="chat-sidebar__new"
-          onClick={onNewChat}
-          disabled={busy}
-          title={busy ? 'Wait for the current response to finish' : 'Start a new chat'}
-          aria-label="New chat"
-        >
-          <span aria-hidden="true">+</span>
-          {!collapsed && <span>New Chat</span>}
-        </button>
       </div>
 
-      {!collapsed && (
+      <button
+        className="chat-sidebar__new"
+        onClick={onNewChat}
+        disabled={busy}
+        title={busy ? 'Wait for the current response to finish' : 'Start a new chat'}
+        aria-label="New chat"
+      >
+        <span aria-hidden="true">+</span>
+        {(!collapsed || drawerOpen) && <span>New Chat</span>}
+      </button>
+
+      {(!collapsed || drawerOpen) && (
         <nav className="chat-sidebar__list">
           {sessions.length === 0 ? (
             <div className="chat-sidebar__empty">No chats yet.</div>
