@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage, ChatSession } from '../../lib/chatStorage';
 import { hasSpatialEvidence } from '../../lib/jobResponse';
+import { stepIndexForStage } from '../../lib/pipeline';
+import type { SampleQuery } from '../../lib/samples';
 import BeforeAfterViewer from '../results/BeforeAfterViewer';
+import PipelineRail from '../PipelineRail';
 import ExecutionTrace from './ExecutionTrace';
+import ConfidenceBadge from './ConfidenceBadge';
+import EvidenceChips from './EvidenceChips';
+import SampleQueries from './SampleQueries';
 
 interface ChatThreadProps {
   apiBase: string;
   session: ChatSession | null;
-  /** Stage label of the in-flight job for this session, if any. */
+  /** Backend stage of the in-flight job for this session (progress_trace stage), if any. */
   pendingStage: string | null;
-  examples: string[];
-  onPickExample: (query: string) => void;
+  pendingLabel: string | null;
+  tools: { tool_id: string; available: boolean; reason: string }[] | null;
+  busy: boolean;
+  onRunSample: (sample: SampleQuery) => void;
 }
 
 export function attachmentLabel(index: number, count: number): string {
@@ -41,14 +49,22 @@ function useImageAvailable(url: string | null): boolean | null {
 
 function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMessage }) {
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
+  const [traceOpen, setTraceOpen] = useState(false);
   const response = message.response;
   const status = message.status ?? 'DONE';
   const spatial = hasSpatialEvidence(response);
   const firstPreview = spatial && response?.observations ? Object.values(response.observations)[0]?.preview_url : null;
   const imageryAvailable = useImageAvailable(firstPreview ? `${apiBase}${firstPreview}` : null);
-  // Reasons are listed only when the answer text does not already spell them out
   const reasons = (response?.failed ?? []).map((f) => f.reason).filter((r) => r && !message.content.includes(r));
-  const showConfidence = status === 'DONE' && !!message.confidence && (response?.evidence_objects.length ?? 0) > 0;
+  const evidence = response?.evidence_objects ?? [];
+  // Rejected claims come from the stored verification_result (real backend field)
+  const rejectedIds = new Set<string>((message.executionTrace?.verification_result?.rejected_claims ?? []).map((c) => c.evidence_id));
+  const showConfidence = status === 'DONE' && !!message.confidence && evidence.length > 0;
+
+  const selectEvidence = (id: string | null) => {
+    setSelectedEvidenceId(id);
+    if (id) setTraceOpen(true);
+  };
 
   return (
     <div className="chat-turn chat-turn--assistant">
@@ -64,9 +80,17 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
 
         {/* 2. Confidence — raw model confidence; MC6.2 calibration is not implemented */}
         {showConfidence && message.confidence && (
-          <div className="chat-turn__confidence" title={response?.confidence_note}>
-            model confidence (uncalibrated): {(message.confidence.value * 100).toFixed(0)}%
-          </div>
+          <ConfidenceBadge confidence={message.confidence} note={response?.confidence_note} />
+        )}
+
+        {/* Evidence behind the answer (MC5 objects referenced by MC7.1) */}
+        {status === 'DONE' && (
+          <EvidenceChips
+            evidence={evidence}
+            rejectedIds={rejectedIds}
+            selectedEvidenceId={selectedEvidenceId}
+            onSelect={selectEvidence}
+          />
         )}
 
         {/* 3. Caveats */}
@@ -83,7 +107,7 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
             <BeforeAfterViewer
               apiBase={apiBase}
               result={response}
-              evidenceGraph={{ nodes: response.evidence_objects.map((ev) => ({ id: ev.evidence_id, type: 'evidence', data: ev })) }}
+              evidenceGraph={{ nodes: evidence.map((ev) => ({ id: ev.evidence_id, type: 'evidence', data: ev })) }}
               selectedEvidenceId={selectedEvidenceId}
             />
           </div>
@@ -98,6 +122,8 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
           <ExecutionTrace
             trace={message.executionTrace}
             response={response}
+            open={traceOpen}
+            onToggle={() => setTraceOpen((v) => !v)}
             selectedEvidenceId={selectedEvidenceId}
             onSelectEvidence={setSelectedEvidenceId}
           />
@@ -115,7 +141,9 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
   );
 }
 
-export default function ChatThread({ apiBase, session, pendingStage, examples, onPickExample }: ChatThreadProps) {
+export default function ChatThread({
+  apiBase, session, pendingStage, pendingLabel, tools, busy, onRunSample,
+}: ChatThreadProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const messageCount = session?.messages.length ?? 0;
 
@@ -123,20 +151,17 @@ export default function ChatThread({ apiBase, session, pendingStage, examples, o
     endRef.current?.scrollIntoView({ block: 'end' });
   }, [messageCount, pendingStage, session?.id]);
 
-  if (!session || (messageCount === 0 && !pendingStage)) {
+  if (!session || (messageCount === 0 && !pendingLabel)) {
     return (
       <section className="chat-thread chat-thread--empty" aria-label="New conversation">
         <div className="chat-empty">
           <h2 className="chat-empty__title">Ask about your imagery</h2>
+          <SampleQueries tools={tools} busy={busy} onRun={onRunSample} />
           <p className="chat-empty__hint">
-            Attach one or two images (GeoTIFF, PNG or JPEG) and ask a question. For change detection, attach the
-            earlier image first — Image A is treated as before and Image B as after unless the files carry acquisition dates.
+            Or attach your own: one or two images (GeoTIFF, PNG or JPEG). For change detection, attach the
+            earlier image first — Image A is treated as before and Image B as after unless the files carry
+            acquisition dates.
           </p>
-          <div className="example-queries">
-            {examples.map((q) => (
-              <button key={q} className="example-query" onClick={() => onPickExample(q)}>{q}</button>
-            ))}
-          </div>
         </div>
       </section>
     );
@@ -166,11 +191,19 @@ export default function ChatThread({ apiBase, session, pendingStage, examples, o
         )
       )}
 
-      {pendingStage && (
+      {pendingLabel && (
         <div className="chat-turn chat-turn--assistant" aria-live="polite">
-          <div className="chat-turn__bubble chat-turn__bubble--pending">
-            <span className="chat-spinner" aria-hidden="true" />
-            <span>Analyzing… {pendingStage}</span>
+          <div className="chat-turn__bubble chat-turn__bubble--progress">
+            <div className="chat-progress__head">
+              <span className="chat-spinner" aria-hidden="true" />
+              <span>{pendingLabel}</span>
+            </div>
+            {/* Driven by the stage the backend reports; no timed animation */}
+            <PipelineRail
+              variant="progress"
+              activeStep={stepIndexForStage(pendingStage)}
+              activeStageLabel={pendingStage}
+            />
           </div>
         </div>
       )}

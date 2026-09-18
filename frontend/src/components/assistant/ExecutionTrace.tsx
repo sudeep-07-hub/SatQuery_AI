@@ -1,9 +1,12 @@
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 import type { EvidenceObject, JobExecutionTrace, JobResponse } from '../../lib/jobResponse';
 
 interface ExecutionTraceProps {
   trace: JobExecutionTrace;
   response?: JobResponse;
+  /** Controlled so an evidence chip can open the trace. */
+  open: boolean;
+  onToggle: () => void;
   selectedEvidenceId: string | null;
   onSelectEvidence: (id: string | null) => void;
 }
@@ -33,8 +36,7 @@ function regionLabel(ev: EvidenceObject): string {
 }
 
 /** Renders the stored execution trace of one job exactly as the backend recorded it. */
-export default function ExecutionTrace({ trace, response, selectedEvidenceId, onSelectEvidence }: ExecutionTraceProps) {
-  const [open, setOpen] = useState(false);
+export default function ExecutionTrace({ trace, response, open, onToggle, selectedEvidenceId, onSelectEvidence }: ExecutionTraceProps) {
 
   const plannedEntry = [...trace.trace].reverse().find((e) => e.task_spec);
   const taskSpec = plannedEntry?.task_spec as Record<string, unknown> | undefined;
@@ -46,19 +48,15 @@ export default function ExecutionTrace({ trace, response, selectedEvidenceId, on
 
   return (
     <div className="exec-trace">
-      <button
-        className="exec-trace__toggle json-viewer__header"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <span className="json-viewer__title">{open ? 'Hide execution trace' : 'Show execution trace'}</span>
-        <span className={`json-viewer__toggle ${open ? 'json-viewer__toggle--open' : ''}`}>▾</span>
+      <button className="exec-trace__toggle" onClick={onToggle} aria-expanded={open}>
+        <span className="exec-trace__node" aria-hidden="true" />
+        <span className="exec-trace__toggle-label">{open ? 'Hide execution trace' : 'Show execution trace'}</span>
       </button>
 
       {open && (
-        <div className="exec-trace__body">
-          <section className="exec-trace__section">
-            <h4>1 · Planned task</h4>
+        <div className="exec-trace__body rail rail--trace">
+          <section className="exec-trace__section rail__step">
+            <h4><span className="rail__index">01</span>Planned task</h4>
             {taskSpec ? (
               <dl className="exec-trace__kv">
                 <dt>primary_task</dt><dd>{text(taskSpec.primary_task)}</dd>
@@ -85,8 +83,8 @@ export default function ExecutionTrace({ trace, response, selectedEvidenceId, on
             ))}
           </section>
 
-          <section className="exec-trace__section">
-            <h4>2 · Executed tools</h4>
+          <section className="exec-trace__section rail__step">
+            <h4><span className="rail__index">02</span>Executed tools</h4>
             {toolEvents.length === 0 ? (
               <p className="exec-trace__empty">No specialist tool was executed.</p>
             ) : (
@@ -110,8 +108,8 @@ export default function ExecutionTrace({ trace, response, selectedEvidenceId, on
             )}
           </section>
 
-          <section className="exec-trace__section">
-            <h4>3 · Verification</h4>
+          <section className="exec-trace__section rail__step">
+            <h4><span className="rail__index">03</span>Verification</h4>
             {verification ? (
               <>
                 <dl className="exec-trace__kv">
@@ -129,8 +127,8 @@ export default function ExecutionTrace({ trace, response, selectedEvidenceId, on
             )}
           </section>
 
-          <section className="exec-trace__section">
-            <h4>4 · Evidence regions</h4>
+          <section className="exec-trace__section rail__step">
+            <h4><span className="rail__index">04</span>Evidence regions</h4>
             {evidence.length === 0 ? (
               <p className="exec-trace__empty">No evidence objects were produced.</p>
             ) : (
@@ -160,8 +158,8 @@ export default function ExecutionTrace({ trace, response, selectedEvidenceId, on
             )}
           </section>
 
-          <section className="exec-trace__section">
-            <h4>Pipeline stages</h4>
+          <section className="exec-trace__section rail__step">
+            <h4><span className="rail__index">05</span>Pipeline stages</h4>
             <ul className="exec-trace__list">
               {trace.trace.map((entry, i) => (
                 <li key={i}>

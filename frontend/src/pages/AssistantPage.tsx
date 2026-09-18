@@ -7,18 +7,13 @@ import ModelSelector from '../components/assistant/ModelSelector';
 import { useChatSessions } from '../hooks/useChatSessions';
 import type { ChatMessage } from '../lib/chatStorage';
 import { snapshotJob, TERMINAL_STATES } from '../lib/jobResponse';
+import { loadSampleFiles, type SampleQuery } from '../lib/samples';
 
 // Backend base URL from the build-time env var (see frontend/.env.example); trailing slashes are tolerated
 const API_BASE = (import.meta.env.VITE_API_BASE ?? 'http://localhost:8000').replace(/\/+$/, '');
 const POLL_MS = 1500;
 const MAX_POLL_FAILURES = 20; // ~30 s without contact
 
-const EXAMPLE_QUERIES = [
-  'What changed between these two images?',
-  'Has a new airstrip been cleared between these two acquisitions?',
-  'Is there a runway visible in this image?',
-  'Describe this image.',
-];
 
 const STAGE_LABELS: Record<string, string> = {
   QUEUED: 'queued',
@@ -55,6 +50,8 @@ export default function AssistantPage() {
   const [pending, setPending] = useState<PendingJob | null>(null);
   const [stage, setStage] = useState<string>('QUEUED');
   const [system, setSystem] = useState<SystemStatus | null>(null);
+  // Narrow screens show the history as an off-canvas drawer; it starts closed and is not persisted.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const inFlight = submitting || pending !== null;
   const { appendMessage } = chats;
@@ -171,13 +168,12 @@ export default function AssistantPage() {
     };
   }, [pending, finishWith]);
 
-  const handleSend = useCallback(async () => {
+  const submit = useCallback(async (sendFiles: UploadedFile[], question: string) => {
     if (inFlight) return;
-    if (files.length === 0) {
+    if (sendFiles.length === 0) {
       setComposerError('Attach at least one image to analyse.');
       return;
     }
-    const question = prompt.trim();
     if (!question) {
       setComposerError('Enter a question about the attached image(s).');
       return;
@@ -188,14 +184,14 @@ export default function AssistantPage() {
     appendMessage(sessionId, {
       role: 'user',
       content: question,
-      attachments: files.map((f) => ({ name: f.file.name, size: f.file.size, type: f.file.type })),
+      attachments: sendFiles.map((f) => ({ name: f.file.name, size: f.file.size, type: f.file.type })),
       timestamp: new Date().toISOString(),
     });
 
     setSubmitting(true);
     try {
       const formData = new FormData();
-      files.forEach((f) => formData.append('files', f.file));
+      sendFiles.forEach((f) => formData.append('files', f.file));
       formData.append('query', question);
       let response: Response;
       try {
@@ -218,7 +214,7 @@ export default function AssistantPage() {
       const data = await response.json();
       setStage('QUEUED');
       setPending({ jobId: data.job_id, sessionId });
-      files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
+      sendFiles.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
       setFiles([]);
       setPrompt('');
     } catch {
@@ -232,24 +228,49 @@ export default function AssistantPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [inFlight, files, prompt, chats, appendMessage]);
+  }, [inFlight, chats, appendMessage]);
+
+  const handleSend = useCallback(() => submit(files, prompt.trim()), [submit, files, prompt]);
+
+  /** Sample query: load the imagery bundled with the site and run the real pipeline on it. */
+  const handleRunSample = useCallback(async (sample: SampleQuery) => {
+    if (inFlight) return;
+    setComposerError(null);
+    try {
+      const loaded = await loadSampleFiles(sample);
+      const attachments: UploadedFile[] = loaded.map((file, i) => ({
+        file,
+        id: `${sample.id}-${i}`,
+        previewUrl: null,
+        isGeoTiff: file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff'),
+      }));
+      await submit(attachments, sample.query);
+    } catch {
+      setComposerError('The bundled sample imagery could not be loaded. Attach your own images instead.');
+    }
+  }, [inFlight, submit]);
 
   const handleNewChat = useCallback(() => {
     if (inFlight) return;
     chats.newChat();
     setComposerError(null);
+    setDrawerOpen(false);
   }, [inFlight, chats]);
 
   const handleSelectSession = useCallback((id: string) => {
     if (inFlight || id === chats.activeId) return;
     chats.selectSession(id);
     setComposerError(null);
+    setDrawerOpen(false);
   }, [inFlight, chats]);
 
   const availableTools = system?.tools.filter((t) => t.available) ?? [];
-  const pendingStage = pending && pending.sessionId === chats.activeId
+  const showingProgress = pending !== null && pending.sessionId === chats.activeId;
+  const pendingLabel = showingProgress
     ? (STAGE_LABELS[stage] ?? stage.toLowerCase())
     : submitting ? 'sending the request (a sleeping server can take about a minute to wake up)' : null;
+  // The raw backend stage drives the live pipeline view; null while only the POST is in flight
+  const pendingStage = showingProgress ? stage : null;
 
   return (
     <div className={`assistant-layout ${chats.collapsed ? 'assistant-layout--collapsed' : ''}`}>
@@ -257,15 +278,29 @@ export default function AssistantPage() {
         sessions={chats.sessions}
         activeId={chats.activeId}
         collapsed={chats.collapsed}
+        drawerOpen={drawerOpen}
         busy={inFlight}
         onToggleCollapsed={() => chats.setCollapsed(!chats.collapsed)}
+        onCloseDrawer={() => setDrawerOpen(false)}
         onNewChat={handleNewChat}
         onSelect={handleSelectSession}
         onDelete={chats.deleteSession}
       />
 
+      {drawerOpen && (
+        <button className="sidebar-scrim" aria-label="Close chat history" onClick={() => setDrawerOpen(false)} />
+      )}
+
       <div className="assistant-center">
         <div className="chat-header">
+          <button
+            className="chat-header__menu"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open chat history"
+            title="Chat history"
+          >
+            ☰
+          </button>
           <ModelSelector />
           {system && (
             <span
@@ -282,8 +317,10 @@ export default function AssistantPage() {
           apiBase={API_BASE}
           session={chats.activeSession}
           pendingStage={pendingStage}
-          examples={EXAMPLE_QUERIES}
-          onPickExample={(q) => { setPrompt(q); setComposerError(null); }}
+          pendingLabel={pendingLabel}
+          tools={system?.tools ?? null}
+          busy={inFlight}
+          onRunSample={handleRunSample}
         />
 
         <ChatComposer

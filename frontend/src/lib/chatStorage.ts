@@ -13,6 +13,7 @@ import type { JobExecutionTrace, JobResponse } from './jobResponse';
 export const STORAGE_KEYS = {
   sidebarCollapsed: 'satquery.sidebar.collapsed',
   sessions: 'satquery.chat.sessions',
+  theme: 'satquery.theme',
 } as const;
 
 export const MAX_SESSIONS = 50;
