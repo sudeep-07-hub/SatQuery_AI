@@ -1,5 +1,5 @@
 # SatQuery AI — Known Architecture & Capability Gaps
-*Updated: 2026-09-16 (demo prototype stabilization; see backend/data/reports/TASK_9_DEMO_PROTOTYPE_STABILIZATION.md)*
+*Updated: 2026-09-16 (demo prototype stabilization pass)*
 
 ## 1. Ambiguous Target Resolution (MC2/MC3) — OPEN
 - **Symptom**: With two images uploaded, a single-image question ("Is there a runway?") cannot be bound to one observation.
