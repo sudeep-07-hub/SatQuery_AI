@@ -25,7 +25,7 @@ services:
       - key: SATQUERY_DISABLED_TOOLS
         value: single_image_vqa,optical_sar_fusion
       - key: SATQUERY_ALLOWED_ORIGINS
-        value: https://satquery-ai-xi.vercel.app
+        value: https://sat-query-ai-mu.vercel.app
       - key: SATQUERY_MAX_UPLOAD_MB
         value: "20"
       - key: SATQUERY_MAX_JOBS
