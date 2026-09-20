@@ -42,6 +42,23 @@
   --radius-base: 6px;
   --radius-none: 0px;
 
+  /* ── Composer controls ──
+     One height for the three controls in the composer row. The textarea's single-line
+     height is built from the same token: pad-block * 2 + line-height + 2px borders. */
+  --composer-control-h: 40px;
+  --composer-field-line-h: 22px;
+  --composer-field-pad-block: 8px;
+  --composer-field-max-h: 160px;
+  /* In-field icon row (the mic joins it in Phase 4): one box size, one gap, one inset */
+  --composer-icon-size: 28px;
+  --composer-icon-gap: var(--spacing-4);
+  --composer-icon-inset: 6px;
+
+  /* ── Focus ──
+     One ring for every interactive control, so no two rings ever compete. */
+  --focus-ring-w: 2px;
+  --focus-ring-offset: 2px;
+
   /* ── Transitions ── */
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
@@ -1428,29 +1445,89 @@ body {
 }
 .chat-composer--drag { background: var(--primary-tint); }
 .chat-composer__pair-note { font: var(--text-small); color: var(--ink-muted); }
+/* Flex-end, not centre: when the field grows to several lines the buttons stay pinned to the
+   bottom edge instead of drifting to the middle of the row. `box-sizing: border-box` comes from
+   the global reset at the top of this file, so every control measures the same way. */
 .chat-composer__row { display: flex; align-items: flex-end; gap: var(--spacing-8); }
+
 .chat-composer__attach, .chat-composer__send {
-  height: 40px; flex-shrink: 0;
+  height: var(--composer-control-h); flex-shrink: 0;
   border-radius: var(--radius-base);
   font: var(--text-small); font-weight: 600; cursor: pointer;
 }
-.chat-composer__attach { width: 40px; font-size: 20px; background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+.chat-composer__attach {
+  width: var(--composer-control-h);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 20px; line-height: 1;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+}
 .chat-composer__attach:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
 .chat-composer__send {
-  display: inline-flex; align-items: center; gap: var(--spacing-8);
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--spacing-8);
   padding: 0 var(--spacing-16);
   background: var(--primary); color: var(--surface); border: none;
 }
 .chat-composer__send:hover:not(:disabled) { background: var(--primary-hover); }
 .chat-composer__attach:disabled, .chat-composer__send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* The field owns the textarea and the icon row that sits on top of it. It also owns the
+   width the icon row occupies, so the textarea can reserve exactly that much padding and long
+   text never runs underneath an icon. Adding an icon in Phase 4 needs no change here: the
+   component raises --composer-icon-count and the reserved padding follows. */
+.chat-composer__field {
+  position: relative;
+  flex: 1; min-width: 0;
+  display: flex;
+  --composer-icon-row-w: 0px;
+}
+.chat-composer__field:has(.chat-composer__icons) {
+  /* Defaults to one icon so the reservation is still correct if the component renders the row
+     without setting a count; an undefined count here would make the calc() below invalid. */
+  --composer-icon-count: 1;
+  --composer-icon-row-w: calc(
+    var(--composer-icon-count) * var(--composer-icon-size)
+    + (var(--composer-icon-count) - 1) * var(--composer-icon-gap)
+    + var(--composer-icon-inset) * 2
+  );
+}
 .chat-composer__input {
-  flex: 1; min-width: 0; resize: none;
-  min-height: 40px; max-height: 160px;
-  padding: 9px 12px;
-  font: var(--text-body); color: var(--ink);
+  width: 100%; resize: none;
+  /* pad-block * 2 + line-height + 2px borders === --composer-control-h (8 + 8 + 22 + 2 = 40),
+     so a single line is optically centred against the buttons without a magic offset. */
+  min-height: var(--composer-control-h);
+  max-height: var(--composer-field-max-h);
+  overflow-y: auto;
+  padding-block: var(--composer-field-pad-block);
+  padding-inline-start: var(--spacing-12);
+  padding-inline-end: calc(var(--spacing-12) + var(--composer-icon-row-w));
+  font: var(--text-body); line-height: var(--composer-field-line-h); color: var(--ink);
   background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-base);
 }
-.chat-composer__input:focus { outline: none; border-color: var(--primary); }
+.chat-composer__input:focus { border-color: var(--primary); }
+
+/* Anchored to the field's bottom-right: same box, same gap, same inset for every icon. */
+.chat-composer__icons {
+  position: absolute; right: var(--composer-icon-inset); bottom: var(--composer-icon-inset);
+  display: flex; align-items: center; gap: var(--composer-icon-gap);
+}
+.chat-composer__icon-btn {
+  width: var(--composer-icon-size); height: var(--composer-icon-size); flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+  background: none; border: 1px solid transparent; border-radius: var(--radius-base);
+  color: var(--ink-muted); cursor: pointer;
+}
+.chat-composer__icon-btn:hover:not(:disabled) { border-color: var(--border); color: var(--primary); }
+.chat-composer__icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* One ring, used by every control in the row, so only ever one is on screen at a time. */
+.chat-composer__attach:focus-visible,
+.chat-composer__send:focus-visible,
+.chat-composer__icon-btn:focus-visible,
+.chat-composer__input:focus-visible {
+  outline: var(--focus-ring-w) solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
+}
 .chat-spinner {
   width: 14px; height: 14px; flex-shrink: 0;
   border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%;

@@ -1,3 +1,4 @@
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import { formatSize, useImageAttachments, type UploadedFile } from '../UploadZone';
 import { attachmentLabel } from './ChatThread';
@@ -44,6 +45,42 @@ export default function ChatComposer({
     inputRef, isDragActive, handleDrop, handleDragOver, handleDragLeave, handleInputChange, handleRemove,
     acceptAttribute, maxFiles,
   } = useImageAttachments(files, onFilesChange, onError);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /**
+   * Auto-grow: one control-height at a single line, growing with the content up to
+   * --composer-field-max-h, past which CSS caps it and it scrolls.
+   */
+  const fitToContent = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    // The placeholder counts towards scrollHeight, which is what we want: the field is as tall
+    // as whatever it is showing. On a narrow screen the placeholder wraps to two lines and the
+    // empty field is two lines tall, exactly as it would be with two lines typed into it.
+    el.style.height = 'auto';
+    const borders = el.offsetHeight - el.clientHeight; // scrollHeight excludes them
+    el.style.height = `${el.scrollHeight + borders}px`;
+  }, []);
+
+  useLayoutEffect(fitToContent, [prompt, fitToContent]);
+
+  // The same text wraps to a different number of lines when the field gets narrower, so the
+  // height is re-fitted on width changes (resize, rotation, attachment chips) too, not only
+  // on input. Width is compared explicitly so re-fitting the height cannot re-trigger this.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    let lastWidth = el.getBoundingClientRect().width;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width;
+      if (width === lastWidth) return;
+      lastWidth = width;
+      fitToContent();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fitToContent]);
 
   const canSend = !inFlight && files.length > 0 && prompt.trim().length > 0;
 
@@ -101,16 +138,21 @@ export default function ChatComposer({
         >
           +
         </button>
-        <textarea
-          id="chat-prompt"
-          className="chat-composer__input"
-          placeholder={files.length === 0 ? 'Attach an image, then ask a question…' : 'Ask a question about the attached image(s)…'}
-          value={prompt}
-          onChange={(e) => onPromptChange(e.target.value)}
-          onKeyDown={onKeyDown}
-          rows={2}
-          maxLength={500}
-        />
+        <div className="chat-composer__field">
+          <textarea
+            ref={textareaRef}
+            id="chat-prompt"
+            className="chat-composer__input"
+            placeholder={files.length === 0 ? 'Attach an image, then ask a question…' : 'Ask a question about the attached image(s)…'}
+            value={prompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={1}
+            maxLength={500}
+          />
+          {/* The in-field icon row renders only when it holds an icon; the count it carries is
+              what reserves the textarea's trailing padding. The mic joins it in Phase 4. */}
+        </div>
         <button className="chat-composer__send" onClick={onSend} disabled={!canSend}>
           {inFlight ? (<><span className="chat-spinner" aria-hidden="true" /> Analyzing…</>) : 'Send'}
         </button>

@@ -25,3 +25,9 @@
 
 ## 7. Single-Image VQA Quality (MC4A) — OPEN
 - `google/paligemma-3b-pt-224` is the pretrained (not mix/fine-tuned) checkpoint; answers are short and unreliable on SAR (confidence is down-weighted by 0.3 for SAR inputs).
+
+## 8. Horizontal Overflow on Narrow Screens (Frontend) — OPEN
+- **Symptom**: `/assistant` scrolls horizontally on a phone. `document.scrollWidth` measures 401 px at both a 320 px and a 375 px viewport.
+- **Cause**: the chat header's `ModelSelector` is a native `<select>` sized by its widest option ("More controllers — coming soon (not available)"): 329 px inside a 400 px label that does not shrink. The composer row itself fits at 320 px.
+- **Not caused by the composer work** — found while verifying composer alignment at 320 px (FIX_LOG.md, 2026-09-20) and left alone, as the header is outside that change's scope.
+- **Required fix**: let the control shrink (`min-width: 0` on the label, a `max-width`/truncated trigger), or replace the native `<select>` — it is a placeholder with exactly one real option today.
