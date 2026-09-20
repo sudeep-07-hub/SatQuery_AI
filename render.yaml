@@ -11,7 +11,7 @@ services:
     runtime: python
     plan: free
     region: singapore
-    branch: demo-prototype-and-web-app
+    branch: main
     rootDir: backend
     buildCommand: pip install --upgrade pip && pip install -r requirements-render.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
