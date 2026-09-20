@@ -1,0 +1,8 @@
+# The Vercel project builds only frontend/ (Root Directory = frontend).
+# Everything else — model weights, datasets, backend — must not be uploaded:
+# some files exceed Vercel's 100 MB per-file limit.
+*
+!frontend
+!frontend/**
+frontend/node_modules
+frontend/dist

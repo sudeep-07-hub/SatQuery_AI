@@ -31,3 +31,8 @@ S1-AAD Sentinel-1 Amazon Airstrip Dataset/
 
 # Scratch tests
 backend/tests/test_temp*.py
+
+# Vercel CLI link and pulled env
+.vercel
+.env.local
+.env*
