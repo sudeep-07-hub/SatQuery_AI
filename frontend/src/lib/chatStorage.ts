@@ -14,6 +14,7 @@ export const STORAGE_KEYS = {
   sidebarCollapsed: 'satquery.sidebar.collapsed',
   sessions: 'satquery.chat.sessions',
   theme: 'satquery.theme',
+  lang: 'satquery.lang',
 } as const;
 
 export const MAX_SESSIONS = 50;

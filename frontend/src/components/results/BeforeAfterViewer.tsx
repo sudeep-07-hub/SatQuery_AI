@@ -1,3 +1,4 @@
+import { useT } from '../../i18n/useT';
 import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, ImageOverlay, useMap } from 'react-leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
@@ -69,13 +70,14 @@ function SwipeCompare({ apiBase, left, right, leftLabel, rightLabel }: {
 }
 
 export default function BeforeAfterViewer({ apiBase, result, evidenceGraph, selectedEvidenceId }: BeforeAfterViewerProps) {
+  const t = useT();
   const observations: Record<string, ObservationInfo> = result?.observations || {};
   const obsIds = Object.keys(observations).sort();
   const overlay = result?.change_overlay;
 
   const roleLabel = (id: string) => {
-    if (overlay?.before_observation === id) return 'Before';
-    if (overlay?.after_observation === id) return 'After';
+    if (overlay?.before_observation === id) return t('viewer.before');
+    if (overlay?.after_observation === id) return t('viewer.after');
     return id.replace('_', ' ');
   };
 
@@ -105,8 +107,8 @@ export default function BeforeAfterViewer({ apiBase, result, evidenceGraph, sele
     <div className="viewer-controls">
       {obsIds.length > 1 && (
         <div className="toggle-group toggle-group--mode">
-          <button className={`btn-toggle ${mode === 'map' ? 'active' : ''}`} onClick={() => setMode('map')}>Map</button>
-          <button className={`btn-toggle ${mode === 'swipe' ? 'active' : ''}`} onClick={() => setMode('swipe')}>Swipe</button>
+          <button className={`btn-toggle ${mode === 'map' ? 'active' : ''}`} onClick={() => setMode('map')}>{t('viewer.map')}</button>
+          <button className={`btn-toggle ${mode === 'swipe' ? 'active' : ''}`} onClick={() => setMode('swipe')}>{t('viewer.swipe')}</button>
         </div>
       )}
       {obsIds.length > 1 && (
@@ -121,13 +123,13 @@ export default function BeforeAfterViewer({ apiBase, result, evidenceGraph, sele
       {overlay && (
         <label className="viewer-check">
           <input type="checkbox" checked={showMask} onChange={(e) => setShowMask(e.target.checked)} />
-          Change mask
+          {t('viewer.changeMaskToggle')}
         </label>
       )}
       {features.length > 0 && (
         <label className="viewer-check">
           <input type="checkbox" checked={showRegions} onChange={(e) => setShowRegions(e.target.checked)} />
-          Evidence regions
+          {t('viewer.evidenceRegions')}
         </label>
       )}
     </div>
@@ -157,9 +159,9 @@ export default function BeforeAfterViewer({ apiBase, result, evidenceGraph, sele
         {controls}
         <div className="plain-viewer">
           <img src={`${apiBase}${active.preview_url}`} alt={active.filename} />
-          {overlay && showMask && <img className="plain-viewer__overlay mask-reveal" src={`${apiBase}${overlay.url}`} alt="change mask" />}
+          {overlay && showMask && <img className="plain-viewer__overlay mask-reveal" src={`${apiBase}${overlay.url}`} alt={t('viewer.changeMask')} />}
         </div>
-        <div className="viewer-note">Not georeferenced: shown in image coordinates.</div>
+        <div className="viewer-note">{t('viewer.notGeoreferenced')}</div>
       </div>
     );
   }

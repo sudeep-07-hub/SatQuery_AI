@@ -26,6 +26,7 @@ app.add_middleware(
 
 from mc1.pipeline import run_mc1_pipeline
 from job_manager import job_registry, run_agentic_pipeline_sync, build_job_registry, TERMINAL_STATUSES
+from qwen.translation import SUPPORTED_QUERY_LANGUAGES, is_supported
 from agent.adapters import build_adapters
 from qwen import engine_factory
 from fastapi import BackgroundTasks, HTTPException
@@ -51,11 +52,21 @@ async def submit_query(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
     query: str = Form(...),
+    query_language: str = Form("en"),
 ):
     """
     Submits a query to the full MC1->MC8 pipeline.
     Returns a job_id immediately.
+
+    `query_language` is the language `query` is written in (default "en", so clients that do not
+    send it behave exactly as before). A non-English query is translated to English before MC2
+    sees it, and the transformation is recorded in the job trace as `input_translation`.
     """
+    if not is_supported(query_language):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported query_language {query_language!r}; supported: {', '.join(SUPPORTED_QUERY_LANGUAGES)}.",
+        )
     # Read files into memory so we don't hold file handles open across async bounds
     files_data = []
     total_bytes = 0
@@ -72,7 +83,7 @@ async def submit_query(
     job_id = job_registry.create_job()
 
     # Sync callable → Starlette runs it in a worker thread, keeping the event loop free
-    background_tasks.add_task(run_agentic_pipeline_sync, job_id, files_data, query)
+    background_tasks.add_task(run_agentic_pipeline_sync, job_id, files_data, query, query_language=query_language)
     return {"job_id": job_id}
 
 @app.get("/api/system")

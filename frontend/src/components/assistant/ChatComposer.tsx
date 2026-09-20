@@ -2,6 +2,8 @@ import { useCallback, useLayoutEffect, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import { formatSize, useImageAttachments, type UploadedFile } from '../UploadZone';
 import { attachmentLabel } from './ChatThread';
+import { useT } from '../../i18n/useT';
+import type { Translate } from '../../i18n/I18nProvider';
 
 interface ChatComposerProps {
   files: UploadedFile[];
@@ -18,8 +20,8 @@ interface ChatComposerProps {
  * Attachment chip. PNG/JPEG show the real image; browsers cannot decode GeoTIFF, so those show a
  * labelled tile until the backend returns its own rendering of the raster.
  */
-function AttachmentChip({ file, index, count, disabled, onRemove }: {
-  file: UploadedFile; index: number; count: number; disabled: boolean; onRemove: () => void;
+function AttachmentChip({ t, file, index, count, disabled, onRemove }: {
+  t: Translate; file: UploadedFile; index: number; count: number; disabled: boolean; onRemove: () => void;
 }) {
   return (
     <span className="attachment">
@@ -29,11 +31,11 @@ function AttachmentChip({ file, index, count, disabled, onRemove }: {
           : <span className="attachment__thumb-label">TIFF</span>}
       </span>
       <span className="attachment__text">
-        <span className="attachment__role">{attachmentLabel(index, count)}</span>
+        <span className="attachment__role">{attachmentLabel(t, index, count)}</span>
         <span className="attachment__name" title={file.file.name}>{file.file.name}</span>
         <span className="attachment__size">{formatSize(file.file.size)}</span>
       </span>
-      <button className="attachment__remove" onClick={onRemove} disabled={disabled} aria-label={`Remove ${file.file.name}`}>×</button>
+      <button className="attachment__remove" onClick={onRemove} disabled={disabled} aria-label={t('composer.removeFile', { name: file.file.name })}>×</button>
     </span>
   );
 }
@@ -46,6 +48,7 @@ export default function ChatComposer({
     acceptAttribute, maxFiles,
   } = useImageAttachments(files, onFilesChange, onError);
 
+  const t = useT();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   /**
@@ -109,13 +112,14 @@ export default function ChatComposer({
       />
 
       {isDragActive && (
-        <div className="chat-composer__scan" aria-hidden="true"><span>Drop imagery to attach</span></div>
+        <div className="chat-composer__scan" aria-hidden="true"><span>{t('composer.dropHint')}</span></div>
       )}
 
       {files.length > 0 && (
         <div className={`attachments ${files.length === 2 ? 'attachments--pair' : ''}`}>
           {files.map((f, i) => (
             <AttachmentChip
+              t={t}
               key={f.id}
               file={f}
               index={i}
@@ -124,7 +128,7 @@ export default function ChatComposer({
               onRemove={() => handleRemove(f.id)}
             />
           ))}
-          {files.length === 2 && <span className="attachments__note">sent together as one bi-temporal pair</span>}
+          {files.length === 2 && <span className="attachments__note">{t('composer.pairNote')}</span>}
         </div>
       )}
 
@@ -133,8 +137,8 @@ export default function ChatComposer({
           className="chat-composer__attach"
           onClick={() => inputRef.current?.click()}
           disabled={inFlight || files.length >= maxFiles}
-          aria-label="Attach images"
-          title={files.length >= maxFiles ? 'Maximum 2 images' : 'Attach GeoTIFF, PNG or JPEG (or drop files here)'}
+          aria-label={t('composer.attachAria')}
+          title={files.length >= maxFiles ? t('composer.attachMax', { max: maxFiles }) : t('composer.attachTitle')}
         >
           +
         </button>
@@ -143,7 +147,7 @@ export default function ChatComposer({
             ref={textareaRef}
             id="chat-prompt"
             className="chat-composer__input"
-            placeholder={files.length === 0 ? 'Attach an image, then ask a question…' : 'Ask a question about the attached image(s)…'}
+            placeholder={files.length === 0 ? t('composer.placeholder') : t('composer.placeholderWithFiles')}
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={onKeyDown}
@@ -154,7 +158,7 @@ export default function ChatComposer({
               what reserves the textarea's trailing padding. The mic joins it in Phase 4. */}
         </div>
         <button className="chat-composer__send" onClick={onSend} disabled={!canSend}>
-          {inFlight ? (<><span className="chat-spinner" aria-hidden="true" /> Analyzing…</>) : 'Send'}
+          {inFlight ? (<><span className="chat-spinner" aria-hidden="true" /> {t('composer.analyzing')}</>) : t('composer.send')}
         </button>
       </div>
 

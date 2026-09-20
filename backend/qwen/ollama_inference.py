@@ -76,7 +76,12 @@ class OllamaQwen3Inference:
                 "metadata": {}
             }
             
-        temperature = kwargs.get("temperature", 0.7)
+        # The default is 0.0, which is what this method always sent: every existing caller relies
+        # on deterministic decoding and passes no temperature, so their behaviour is unchanged.
+        # It is now honoured rather than read and discarded — greedy decoding sends this model
+        # into repetition loops on translation prompts (see qwen/translation.py).
+        temperature = kwargs.get("temperature", 0.0)
+        repeat_penalty = kwargs.get("repeat_penalty")
         max_new_tokens = kwargs.get("max_new_tokens", 512)
         
         try:
@@ -94,8 +99,9 @@ class OllamaQwen3Inference:
                     "think": False,
                     "keep_alive": "15m",
                     "options": {
-                        "temperature": 0.0,
-                        "num_predict": max(2048, max_new_tokens)
+                        "temperature": temperature,
+                        "num_predict": max(2048, max_new_tokens),
+                        **({"repeat_penalty": repeat_penalty} if repeat_penalty else {}),
                     }
                 },
                 timeout=600

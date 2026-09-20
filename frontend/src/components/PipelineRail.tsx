@@ -1,4 +1,5 @@
 import { PIPELINE_STEPS } from '../lib/pipeline';
+import { useT } from '../i18n/useT';
 
 interface PipelineRailProps {
   /** "home": each step can be expanded for one more detail. "progress": a live job's stage is highlighted. */
@@ -18,6 +19,7 @@ interface PipelineRailProps {
 export default function PipelineRail({
   variant, openStep = null, onToggleStep, activeStep = -1, activeStageLabel,
 }: PipelineRailProps) {
+  const t = useT();
   return (
     <ol className={`rail rail--${variant}`}>
       {PIPELINE_STEPS.map((step, idx) => {
@@ -28,10 +30,10 @@ export default function PipelineRail({
 
         const body = (
           <span className="rail__body">
-            <span className="rail__label">{step.label}</span>
-            <span className="rail__detail">{step.detail}</span>
+            <span className="rail__label">{t(step.labelKey)}</span>
+            <span className="rail__detail">{t(step.detailKey)}</span>
             {variant === 'home' && (
-              <span className="rail__more"><span>{step.more}</span></span>
+              <span className="rail__more"><span>{t(step.moreKey)}</span></span>
             )}
             {variant === 'progress' && state === 'active' && activeStageLabel && (
               <span className="rail__stage">{activeStageLabel}</span>
@@ -41,7 +43,7 @@ export default function PipelineRail({
 
         return (
           <li
-            key={step.label}
+            key={step.labelKey}
             className={`rail__step ${open ? 'rail__step--open' : ''} ${state ? `rail__step--${state}` : ''}`}
             aria-current={state === 'active' ? 'step' : undefined}
           >

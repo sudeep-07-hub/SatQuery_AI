@@ -4,49 +4,52 @@
  * `stages` lists the backend progress-trace stage names (job_manager.py) that belong to each step, so
  * progress is driven by what the backend actually reported — never by a timer.
  */
+import type { TranslationKey } from '../i18n/types';
+
 export interface PipelineStep {
-  label: string;
-  detail: string;
+  labelKey: TranslationKey;
+  detailKey: TranslationKey;
   /** One further true detail about the running system (see KNOWN_GAPS.md), revealed on demand. */
-  more: string;
+  moreKey: TranslationKey;
+  /** Backend progress-trace stage names — identifiers, never translated. */
   stages: string[];
 }
 
 export const PIPELINE_STEPS: PipelineStep[] = [
   {
-    label: 'Input qualification',
-    detail: 'Reads the uploaded files and checks whether they can answer the question.',
-    more: 'Format, coordinate system, footprint overlap and sensor type. A pair with no overlap is rejected here.',
+    labelKey: 'pipeline.qualify.label',
+    detailKey: 'pipeline.qualify.detail',
+    moreKey: 'pipeline.qualify.more',
     stages: ['QUEUED', 'MC1_VALIDATING'],
   },
   {
-    label: 'Query understanding',
-    detail: 'Turns the question into a task the pipeline can plan for.',
-    more: 'Qwen3 4B (Q4_K_M, served by Ollama). If it is unavailable, deterministic Tool Registry rules take over and the answer says so.',
+    labelKey: 'pipeline.query.label',
+    detailKey: 'pipeline.query.detail',
+    moreKey: 'pipeline.query.more',
     stages: ['QUERY_INTELLIGENCE'],
   },
   {
-    label: 'Tool registry',
-    detail: 'Picks an engine that can actually run in this environment.',
-    more: 'Each engine reports availability per job, so an engine that cannot run is never selected — ChangeMamba, for example, needs CUDA.',
+    labelKey: 'pipeline.registry.label',
+    detailKey: 'pipeline.registry.detail',
+    moreKey: 'pipeline.registry.more',
     stages: ['TOOL_SELECTION', 'OBSERVATION_BINDING', 'WORKFLOW_PLANNING'],
   },
   {
-    label: 'Specialist models',
-    detail: 'Runs the selected engine on the uploaded pixels.',
-    more: 'PaliGemma answers questions about a single image; change detection uses a classical SAR log-ratio / optical change vector analysis.',
+    labelKey: 'pipeline.models.label',
+    detailKey: 'pipeline.models.detail',
+    moreKey: 'pipeline.models.more',
     stages: ['AGENTIC_EXECUTION', 'EVIDENCE_NORMALIZATION'],
   },
   {
-    label: 'Verification',
-    detail: 'Checks each piece of evidence before it reaches the answer.',
-    more: 'Evidence below the confidence threshold is rejected and listed as rejected. Confidence is raw model confidence, not calibrated.',
+    labelKey: 'pipeline.verify.label',
+    detailKey: 'pipeline.verify.detail',
+    moreKey: 'pipeline.verify.more',
     stages: ['VERIFICATION'],
   },
   {
-    label: 'Answer + audit',
-    detail: 'Writes the answer from the verified evidence only.',
-    more: 'Each answer carries its evidence, an auditable execution trace, and PDF, GeoJSON and JSON exports.',
+    labelKey: 'pipeline.answer.label',
+    detailKey: 'pipeline.answer.detail',
+    moreKey: 'pipeline.answer.more',
     stages: ['ANSWER_SYNTHESIS', 'DONE'],
   },
 ];

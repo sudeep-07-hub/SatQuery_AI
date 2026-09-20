@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/useT';
 import { useState, useCallback, useEffect } from 'react';
 import type { UploadedFile } from '../components/UploadZone';
 import ChatSidebar from '../components/assistant/ChatSidebar';
@@ -38,10 +39,9 @@ interface PendingJob {
   sessionId: string;
 }
 
-const UNREACHABLE_MESSAGE =
-  'Could not reach the SatQuery backend, so your question was not analysed. Check that the server is running and try again.';
 
 export default function AssistantPage() {
+  const { t, locale } = useI18n();
   const chats = useChatSessions();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [prompt, setPrompt] = useState('');
@@ -100,7 +100,7 @@ export default function AssistantPage() {
           if (!cancelled) {
             finishWith(pending, {
               role: 'assistant',
-              content: 'The backend no longer has this job (it may have been restarted), so there is no result to show.',
+              content: t('error.jobGone'),
               status: 'FAILED',
               error: 'job_not_found',
               jobId: pending.jobId,
@@ -128,8 +128,8 @@ export default function AssistantPage() {
 
           const { response, executionTrace } = snapshotJob(result, progress, structured);
           const content = status === 'FAILED'
-            ? 'The analysis failed on the server, so no answer was produced. The execution trace shows where it stopped.'
-            : response.final_answer || `The request ended with status ${status}.`;
+            ? t('error.serverFailed')
+            : response.final_answer || t('error.endedWithStatus', { status });
           finishWith(pending, {
             role: 'assistant',
             content,
@@ -148,7 +148,7 @@ export default function AssistantPage() {
           if (!cancelled) {
             finishWith(pending, {
               role: 'assistant',
-              content: 'Lost contact with the SatQuery backend while the analysis was running, so no answer was received.',
+              content: t('error.lostContact'),
               status: 'FAILED',
               error: 'backend_unreachable',
               jobId: pending.jobId,
@@ -171,11 +171,11 @@ export default function AssistantPage() {
   const submit = useCallback(async (sendFiles: UploadedFile[], question: string) => {
     if (inFlight) return;
     if (sendFiles.length === 0) {
-      setComposerError('Attach at least one image to analyse.');
+      setComposerError(t('error.noImage'));
       return;
     }
     if (!question) {
-      setComposerError('Enter a question about the attached image(s).');
+      setComposerError(t('error.noQuestion'));
       return;
     }
     setComposerError(null);
@@ -193,6 +193,9 @@ export default function AssistantPage() {
       const formData = new FormData();
       sendFiles.forEach((f) => formData.append('files', f.file));
       formData.append('query', question);
+      // The language `question` is written in. The backend translates it to English before MC2
+      // and records the transformation in the trace; "en" is the default and changes nothing.
+      formData.append('query_language', locale);
       let response: Response;
       try {
         response = await fetch(`${API_BASE}/api/query`, { method: 'POST', body: formData });
@@ -220,7 +223,7 @@ export default function AssistantPage() {
     } catch {
       appendMessage(sessionId, {
         role: 'assistant',
-        content: UNREACHABLE_MESSAGE,
+        content: t('error.unreachable'),
         status: 'FAILED',
         error: 'backend_unreachable',
         timestamp: new Date().toISOString(),
@@ -246,7 +249,7 @@ export default function AssistantPage() {
       }));
       await submit(attachments, sample.query);
     } catch {
-      setComposerError('The bundled sample imagery could not be loaded. Attach your own images instead.');
+      setComposerError(t('error.sampleLoad'));
     }
   }, [inFlight, submit]);
 
@@ -288,7 +291,7 @@ export default function AssistantPage() {
       />
 
       {drawerOpen && (
-        <button className="sidebar-scrim" aria-label="Close chat history" onClick={() => setDrawerOpen(false)} />
+        <button className="sidebar-scrim" aria-label={t('sidebar.closeDrawer')} onClick={() => setDrawerOpen(false)} />
       )}
 
       <div className="assistant-center">
@@ -296,8 +299,8 @@ export default function AssistantPage() {
           <button
             className="chat-header__menu"
             onClick={() => setDrawerOpen(true)}
-            aria-label="Open chat history"
-            title="Chat history"
+            aria-label={t('sidebar.openDrawer')}
+            title={t('sidebar.aria')}
           >
             ☰
           </button>

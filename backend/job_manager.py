@@ -38,6 +38,12 @@ from mc6_verification.verifier import Verifier
 
 from qwen.pipeline import QueryIntelligencePipeline, QueryIntelligenceResult
 from qwen.schemas import TaskSpec, ObservationRequirement, SubtaskSpec
+from qwen.translation import (
+    TranslationUnavailable,
+    translate_query_to_english,
+    translate_text_from_english,
+    translate_texts_from_english,
+)
 from qwen import engine_factory
 from agent.default_tools import setup_default_registry
 from agent.selector import QwenToolSelector
@@ -57,6 +63,8 @@ logger = logging.getLogger(__name__)
 TERMINAL_STATUSES = [
     "DONE", "FAILED", "ABSTAIN", "INSUFFICIENT_EVIDENCE", "PRECONDITION_FAILED",
     "MODEL_UNAVAILABLE", "INSUFFICIENT_OBSERVATIONS",
+    # A non-English query with no language model to translate it: refused, not guessed.
+    "TRANSLATION_UNAVAILABLE",
 ]
 
 
@@ -523,6 +531,7 @@ async def execute_agentic_pipeline(
     execution_mode: str = "real",
     qwen_backend: Optional[str] = None,
     planner_fallback: Optional[str] = None,
+    query_language: str = "en",
 ):
     """
     Runs the full Agentic Pipeline asynchronously.
@@ -648,6 +657,56 @@ async def execute_agentic_pipeline(
         else:
             qwen_engine = mock_engine
             planner_info["llm_backend"] = "fixture mock"
+
+        # ── STAGE 3a: Input translation ───────────────────────────────
+        # The one place the query changes language. Everything downstream — MC2, MC3 and every
+        # specialist engine — sees `query`, which is English from here on.
+        input_translation = None
+        if query_language and query_language != "en":
+            if qwen_engine is None:
+                # The Tool Registry planner matches English keywords. Running it on a non-English
+                # string would answer a question the pipeline never understood, so the job is
+                # refused instead of guessed.
+                _finish_early(
+                    job_id, "TRANSLATION_UNAVAILABLE",
+                    "Non-English query cannot be served without the language model",
+                    {
+                        "final_answer": (
+                            "This deployment is running Tool Registry rules; non-English queries need "
+                            "the language model. Ask in English, or connect a deployment that runs Qwen3."
+                        ),
+                        "execution_status": "TRANSLATION_UNAVAILABLE",
+                        "query_language": query_language,
+                    },
+                    {"query_language": query_language, "reason": "no language model is loaded"},
+                )
+                return
+            try:
+                input_translation = translate_query_to_english(qwen_engine, query, query_language)
+            except TranslationUnavailable as exc:
+                _finish_early(
+                    job_id, "TRANSLATION_UNAVAILABLE",
+                    "The query could not be translated into English",
+                    {
+                        "final_answer": (
+                            f"Your question could not be translated into English, so it was not analysed ({exc}). "
+                            "Ask in English, or try again."
+                        ),
+                        "execution_status": "TRANSLATION_UNAVAILABLE",
+                        "query_language": query_language,
+                    },
+                    {"query_language": query_language, "reason": str(exc)},
+                )
+                return
+            query = input_translation["translated"]
+            job["input_translation"] = input_translation
+            job_registry.update_status(job_id, "QUERY_INTELLIGENCE", {
+                "message": (
+                    f"Query translated {input_translation['from']} → en; the pipeline reasons over the "
+                    "English string shown here"
+                ),
+                "input_translation": input_translation,
+            })
 
         if smoke_test:
             qi_result = _fixture_smoke_intent(query)
@@ -911,6 +970,24 @@ async def execute_agentic_pipeline(
         final_answer["change_map"] = None
         final_answer["agent_state"] = state.model_dump()
         final_answer["verification_result"] = verification_result
+
+        # ── STAGE 11b: Answer translation ─────────────────────────────
+        # The answer is synthesised in English from verified evidence, then translated as the last
+        # step. The English original is kept beside it under *_en: the execution trace and the MC8
+        # exports are audit artefacts and stay English (KNOWN_GAPS §13, §14).
+        final_answer["query_language"] = query_language or "en"
+        if input_translation:
+            final_answer["input_translation"] = input_translation
+        if query_language and query_language != "en":
+            final_answer["final_answer_en"] = final_answer.get("final_answer", "")
+            final_answer["caveats_en"] = list(final_answer.get("caveats", []))
+            final_answer["final_answer"] = translate_text_from_english(
+                qwen_engine, final_answer.get("final_answer", ""), query_language
+            )
+            final_answer["caveats"] = translate_texts_from_english(
+                qwen_engine, list(final_answer.get("caveats", [])), query_language
+            )
+            final_answer["exports_language"] = "en"
 
         job["result"] = final_answer
         if change_outputs is not None:

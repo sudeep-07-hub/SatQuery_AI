@@ -1,5 +1,9 @@
 import { Fragment } from 'react';
 import type { EvidenceObject, JobExecutionTrace, JobResponse } from '../../lib/jobResponse';
+import { useT } from '../../i18n/useT';
+import { isLocaleCode, LOCALE_ENDONYM } from '../../i18n/types';
+import type { Translate } from '../../i18n/I18nProvider';
+import type { TranslationKey } from '../../i18n/types';
 
 interface ExecutionTraceProps {
   trace: JobExecutionTrace;
@@ -11,12 +15,24 @@ interface ExecutionTraceProps {
   onSelectEvidence: (id: string | null) => void;
 }
 
-const PLANNER_LABEL: Record<string, string> = {
-  qwen3: 'Qwen3',
-  registry_rules: 'Tool Registry rules (fallback)',
-  template: 'evidence-only template (no LLM)',
-  fixture: 'test fixture',
+/** Qwen3 is a model name and stays verbatim; the other three are prose and are translated. */
+const PLANNER_LABEL_KEYS: Record<string, TranslationKey> = {
+  registry_rules: 'trace.registryFallback',
+  template: 'trace.plannerTemplate',
+  fixture: 'trace.plannerFixture',
 };
+const PLANNER_VERBATIM: Record<string, string> = { qwen3: 'Qwen3' };
+
+function plannerLabel(t: Translate, value: string): string {
+  if (PLANNER_VERBATIM[value]) return PLANNER_VERBATIM[value];
+  const key = PLANNER_LABEL_KEYS[value];
+  return key ? t(key) : value;
+}
+
+/** The backend sends a bare language code; name it in its own script when we know it. */
+function languageName(code: string): string {
+  return isLocaleCode(code) ? LOCALE_ENDONYM[code] : code;
+}
 
 function time(ts: string | undefined): string {
   if (!ts) return '';
@@ -29,14 +45,18 @@ function text(value: unknown): string {
   return typeof value === 'string' ? value : JSON.stringify(value);
 }
 
-function regionLabel(ev: EvidenceObject): string {
-  if (!ev.spatial_region) return 'no spatial region';
-  if (ev.processing_parameters?.spatial_region_is_full_image) return `${ev.spatial_region.type} · whole image footprint`;
-  return `${ev.spatial_region.type} · localized region`;
+/** The region *type* comes from the backend and stays verbatim; only the wording is translated. */
+function regionLabel(t: Translate, ev: EvidenceObject): string {
+  if (!ev.spatial_region) return t('trace.noSpatialRegion');
+  const suffix = ev.processing_parameters?.spatial_region_is_full_image
+    ? t('trace.wholeImageFootprint')
+    : t('trace.localizedRegion');
+  return `${ev.spatial_region.type} · ${suffix}`;
 }
 
 /** Renders the stored execution trace of one job exactly as the backend recorded it. */
 export default function ExecutionTrace({ trace, response, open, onToggle, selectedEvidenceId, onSelectEvidence }: ExecutionTraceProps) {
+  const t = useT();
 
   const plannedEntry = [...trace.trace].reverse().find((e) => e.task_spec);
   const taskSpec = plannedEntry?.task_spec as Record<string, unknown> | undefined;
@@ -50,13 +70,29 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
     <div className="exec-trace">
       <button className="exec-trace__toggle" onClick={onToggle} aria-expanded={open}>
         <span className="exec-trace__node" aria-hidden="true" />
-        <span className="exec-trace__toggle-label">{open ? 'Hide execution trace' : 'Show execution trace'}</span>
+        <span className="exec-trace__toggle-label">{open ? t('trace.hide') : t('trace.show')}</span>
       </button>
 
       {open && (
         <div className="exec-trace__body rail rail--trace">
+          {/* A query that changed language is shown before anything else: everything below ran on
+              the English string, and a reviewer has to be able to see both. */}
+          {response?.input_translation && (
+            <section className="exec-trace__section rail__step">
+              <h4><span className="rail__index">00</span>{t('trace.inputTranslation')}</h4>
+              <p className="exec-trace__detail">
+                {t('trace.translatedFrom', { lang: languageName(response.input_translation.from) })}
+              </p>
+              <dl className="exec-trace__kv">
+                <dt>{t('trace.originalQuery')}</dt><dd>{response.input_translation.original}</dd>
+                <dt>{t('trace.englishQuery')}</dt><dd>{response.input_translation.translated}</dd>
+                <dt>engine</dt><dd>{response.input_translation.engine}</dd>
+              </dl>
+            </section>
+          )}
+
           <section className="exec-trace__section rail__step">
-            <h4><span className="rail__index">01</span>Planned task</h4>
+            <h4><span className="rail__index">01</span>{t('trace.plannedTask')}</h4>
             {taskSpec ? (
               <dl className="exec-trace__kv">
                 <dt>primary_task</dt><dd>{text(taskSpec.primary_task)}</dd>
@@ -64,12 +100,12 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
                 <dt>temporal_requirement</dt><dd>{text(taskSpec.temporal_requirement)}</dd>
               </dl>
             ) : (
-              <p className="exec-trace__empty">The job stopped before a task was planned.</p>
+              <p className="exec-trace__empty">{t('trace.noTask')}</p>
             )}
             {trace.planner && (
               <dl className="exec-trace__kv">
                 {Object.entries(trace.planner).map(([k, v]) => (
-                  <Fragment key={k}><dt>{k}</dt><dd>{v ? (PLANNER_LABEL[v] ?? v) : '—'}</dd></Fragment>
+                  <Fragment key={k}><dt>{k}</dt><dd>{v ? plannerLabel(t, v) : '—'}</dd></Fragment>
                 ))}
               </dl>
             )}
@@ -84,9 +120,9 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
           </section>
 
           <section className="exec-trace__section rail__step">
-            <h4><span className="rail__index">02</span>Executed tools</h4>
+            <h4><span className="rail__index">02</span>{t('trace.executedTools')}</h4>
             {toolEvents.length === 0 ? (
-              <p className="exec-trace__empty">No specialist tool was executed.</p>
+              <p className="exec-trace__empty">{t('trace.noTools')}</p>
             ) : (
               <ul className="exec-trace__list">
                 {toolEvents.map((e, i) => {
@@ -104,12 +140,12 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
               </ul>
             )}
             {trace.replan_history.length > 0 && (
-              <p className="exec-trace__detail">Recoveries: {trace.replan_history.length}</p>
+              <p className="exec-trace__detail">{t('trace.recoveries', { count: trace.replan_history.length })}</p>
             )}
           </section>
 
           <section className="exec-trace__section rail__step">
-            <h4><span className="rail__index">03</span>Verification</h4>
+            <h4><span className="rail__index">03</span>{t('trace.verification')}</h4>
             {verification ? (
               <>
                 <dl className="exec-trace__kv">
@@ -123,14 +159,14 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
                 )}
               </>
             ) : (
-              <p className="exec-trace__empty">Verification did not run for this job.</p>
+              <p className="exec-trace__empty">{t('trace.noVerification')}</p>
             )}
           </section>
 
           <section className="exec-trace__section rail__step">
-            <h4><span className="rail__index">04</span>Evidence regions</h4>
+            <h4><span className="rail__index">04</span>{t('trace.evidenceRegions')}</h4>
             {evidence.length === 0 ? (
-              <p className="exec-trace__empty">No evidence objects were produced.</p>
+              <p className="exec-trace__empty">{t('trace.noEvidence')}</p>
             ) : (
               <ul className="exec-trace__evidence">
                 {evidence.map((ev) => {
@@ -141,14 +177,14 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
                         className={`evidence-card ${selected ? 'evidence-card--selected' : ''} ${rejectedIds.has(ev.evidence_id) ? 'evidence-card--rejected' : ''}`}
                         onClick={() => onSelectEvidence(selected ? null : ev.evidence_id)}
                         disabled={!ev.spatial_region}
-                        title={ev.spatial_region ? 'Highlight on the map' : 'This evidence has no spatial region'}
+                        title={ev.spatial_region ? t('trace.highlightOnMap') : t('trace.noRegionForEvidence')}
                       >
-                        <span className="evidence-card__claim">{rejectedIds.has(ev.evidence_id) && '[Rejected] '}{ev.claim}</span>
+                        <span className="evidence-card__claim">{rejectedIds.has(ev.evidence_id) && t('trace.rejectedPrefix')}{ev.claim}</span>
                         <span className="evidence-card__meta">
                           <span>{ev.evidence_id}</span>
                           <span>{ev.source_model}</span>
-                          <span title={text(ev.processing_parameters?.confidence_source)}>model confidence (uncalibrated): {(ev.confidence * 100).toFixed(0)}%</span>
-                          <span>{regionLabel(ev)}</span>
+                          <span title={text(ev.processing_parameters?.confidence_source)}>{t('trace.modelConfidence')}: {(ev.confidence * 100).toFixed(0)}%</span>
+                          <span>{regionLabel(t, ev)}</span>
                         </span>
                       </button>
                     </li>
@@ -159,7 +195,7 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
           </section>
 
           <section className="exec-trace__section rail__step">
-            <h4><span className="rail__index">05</span>Pipeline stages</h4>
+            <h4><span className="rail__index">05</span>{t('trace.pipelineStages')}</h4>
             <ul className="exec-trace__list">
               {trace.trace.map((entry, i) => (
                 <li key={i}>
@@ -169,6 +205,8 @@ export default function ExecutionTrace({ trace, response, open, onToggle, select
               ))}
             </ul>
           </section>
+
+          <p className="exec-trace__detail exec-trace__english-note">{t('trace.englishNote')}</p>
         </div>
       )}
     </div>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useT } from '../i18n/useT';
 
 const GITHUB_URL = 'https://github.com/sudeep-07-hub/SatQuery_AI';
 
@@ -18,6 +20,7 @@ function GitHubMark() {
 }
 
 export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
+  const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -30,7 +33,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
 
   return (
     <header className="app-header navbar">
-      <Link to="/" className="app-header__logo navbar__brand" aria-label="SatQuery home">
+      <Link to="/" className="app-header__logo navbar__brand" aria-label={t('nav.brandAria')}>
         <div className="app-header__icon">🛰</div>
         <div className="app-header__title">SatQuery</div>
       </Link>
@@ -38,7 +41,7 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
       <div className="navbar__controls">
         <button
           className="navbar__menu-toggle"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={menuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
           aria-expanded={menuOpen}
           aria-controls="navbar-links"
           onClick={() => setMenuOpen((open) => !open)}
@@ -47,22 +50,24 @@ export default function Navbar({ theme, onToggleTheme }: NavbarProps) {
         </button>
 
         <nav id="navbar-links" className={`navbar__links ${menuOpen ? 'navbar__links--open' : ''}`}>
-          <NavLink to="/" end className={linkClass}>Home</NavLink>
-          <NavLink to="/assistant" className={linkClass}>Assistant</NavLink>
+          <NavLink to="/" end className={linkClass}>{t('nav.home')}</NavLink>
+          <NavLink to="/assistant" className={linkClass}>{t('nav.assistant')}</NavLink>
           <a
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="navbar__link navbar__github"
-            aria-label="SatQuery AI on GitHub"
+            aria-label={t('nav.githubAria')}
           >
             <GitHubMark />
-            <span className="navbar__github-label">GitHub</span>
+            <span className="navbar__github-label">{t('nav.github')}</span>
           </a>
         </nav>
 
+        <LanguageSwitcher />
+
         {/* Existing light/dark control, kept from the previous header (not a navigation item) */}
-        <button className="theme-toggle" onClick={onToggleTheme} aria-label="Toggle colour theme">
+        <button className="theme-toggle" onClick={onToggleTheme} aria-label={t('nav.toggleTheme')}>
           {theme === 'light' ? '🌙' : '☀'}
         </button>
       </div>

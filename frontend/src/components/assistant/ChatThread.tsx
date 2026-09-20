@@ -9,6 +9,9 @@ import ExecutionTrace from './ExecutionTrace';
 import ConfidenceBadge from './ConfidenceBadge';
 import EvidenceChips from './EvidenceChips';
 import SampleQueries from './SampleQueries';
+import { useT } from '../../i18n/useT';
+import type { Translate } from '../../i18n/I18nProvider';
+import type { TranslationKey } from '../../i18n/types';
 
 interface ChatThreadProps {
   apiBase: string;
@@ -21,17 +24,23 @@ interface ChatThreadProps {
   onRunSample: (sample: SampleQuery) => void;
 }
 
-export function attachmentLabel(index: number, count: number): string {
-  return count === 2 ? `Image ${index === 0 ? 'A' : 'B'}` : 'Image';
+export function attachmentLabel(t: Translate, index: number, count: number): string {
+  if (count !== 2) return t('thread.image');
+  return index === 0 ? t('thread.imageA') : t('thread.imageB');
 }
 
-const STOP_TITLES: Record<string, string> = {
-  PRECONDITION_FAILED: 'Inputs rejected',
-  INSUFFICIENT_OBSERVATIONS: 'Inputs do not fit the request',
-  ABSTAIN: 'No answer given',
-  INSUFFICIENT_EVIDENCE: 'Insufficient evidence',
-  MODEL_UNAVAILABLE: 'Model unavailable',
-  FAILED: 'Analysis failed',
+/**
+ * Human gloss for each stop status. The enum is the auditable value and is printed verbatim next
+ * to the gloss, never replaced by it. An unrecognised status falls back to the enum alone.
+ */
+const STOP_TITLE_KEYS: Record<string, TranslationKey> = {
+  PRECONDITION_FAILED: 'stop.PRECONDITION_FAILED',
+  INSUFFICIENT_OBSERVATIONS: 'stop.INSUFFICIENT_OBSERVATIONS',
+  ABSTAIN: 'stop.ABSTAIN',
+  INSUFFICIENT_EVIDENCE: 'stop.INSUFFICIENT_EVIDENCE',
+  MODEL_UNAVAILABLE: 'stop.MODEL_UNAVAILABLE',
+  FAILED: 'stop.FAILED',
+  TRANSLATION_UNAVAILABLE: 'stop.TRANSLATION_UNAVAILABLE',
 };
 
 /** Spatial evidence imagery is served from the backend's in-memory job store; check it is still there. */
@@ -48,6 +57,7 @@ function useImageAvailable(url: string | null): boolean | null {
 }
 
 function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMessage }) {
+  const t = useT();
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
   const [traceOpen, setTraceOpen] = useState(false);
   const response = message.response;
@@ -69,7 +79,11 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
   return (
     <div className="chat-turn chat-turn--assistant">
       <div className={`chat-turn__bubble ${status !== 'DONE' ? 'chat-turn__bubble--stopped' : ''}`}>
-        {status !== 'DONE' && <div className="chat-turn__status">{STOP_TITLES[status] ?? status} · {status}</div>}
+        {status !== 'DONE' && (
+          <div className="chat-turn__status">
+            {STOP_TITLE_KEYS[status] ? `${t(STOP_TITLE_KEYS[status])} · ${status}` : status}
+          </div>
+        )}
 
         {/* 1. Answer */}
         <div className="chat-turn__content">{message.content}</div>
@@ -96,7 +110,7 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
         {/* 3. Caveats */}
         {response && response.caveats.length > 0 && (
           <div className="caveats-section chat-turn__caveats">
-            <strong>Caveats</strong>
+            <strong>{t('thread.caveats')}</strong>
             <ul>{response.caveats.map((c, i) => <li key={i}>{c}</li>)}</ul>
           </div>
         )}
@@ -113,9 +127,7 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
           </div>
         )}
         {spatial && imageryAvailable === false && (
-          <div className="chat-turn__note">
-            The imagery for this answer is no longer held by the backend (jobs are kept in server memory), so the map cannot be redrawn.
-          </div>
+          <div className="chat-turn__note">{t('thread.imageryGone')}</div>
         )}
 
         {message.executionTrace && (
@@ -131,8 +143,8 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
 
         {message.jobId && status === 'DONE' && (
           <div className="chat-turn__exports">
-            {[['pdf', 'PDF report'], ['geojson', 'GeoJSON'], ['json', 'JSON trace']].map(([fmt, label]) => (
-              <a key={fmt} href={`${apiBase}/api/jobs/${message.jobId}/export/${fmt}`} className="export-link">{label}</a>
+            {([['pdf', 'export.pdf'], ['geojson', 'export.geojson'], ['json', 'export.json']] as const).map(([fmt, key]) => (
+              <a key={fmt} href={`${apiBase}/api/jobs/${message.jobId}/export/${fmt}`} className="export-link">{t(key)}</a>
             ))}
           </div>
         )}
@@ -144,6 +156,7 @@ function AssistantTurn({ apiBase, message }: { apiBase: string; message: ChatMes
 export default function ChatThread({
   apiBase, session, pendingStage, pendingLabel, tools, busy, onRunSample,
 }: ChatThreadProps) {
+  const t = useT();
   const endRef = useRef<HTMLDivElement>(null);
   const messageCount = session?.messages.length ?? 0;
 
@@ -153,7 +166,7 @@ export default function ChatThread({
 
   if (!session || (messageCount === 0 && !pendingLabel)) {
     return (
-      <section className="chat-thread chat-thread--empty" aria-label="New conversation">
+      <section className="chat-thread chat-thread--empty" aria-label={t('thread.newConversation')}>
         <div className="chat-empty">
           <h2 className="chat-empty__title">Ask about your imagery</h2>
           <SampleQueries tools={tools} busy={busy} onRun={onRunSample} />
@@ -178,7 +191,7 @@ export default function ChatThread({
                 <div className="chat-chips">
                   {message.attachments.map((a, i) => (
                     <span key={`${a.name}-${i}`} className="chat-chip">
-                      <span className="chat-chip__label">{attachmentLabel(i, message.attachments!.length)}</span>
+                      <span className="chat-chip__label">{attachmentLabel(t, i, message.attachments!.length)}</span>
                       <span className="chat-chip__name">{a.name}</span>
                     </span>
                   ))}

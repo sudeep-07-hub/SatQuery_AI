@@ -33,12 +33,27 @@ def export_geojson(job: Dict, output_dir: str) -> str:
         
     return filepath
 
+def _audit_text(result: dict, key: str, default=None):
+    """
+    Exports are audit artefacts and stay English.
+
+    When a job ran in another language, job_manager keeps the English original alongside the
+    translated prose under `<key>_en`. ReportLab's built-in Type 1 faces have no Indic glyphs, so
+    writing the translated string here would produce a PDF full of empty boxes. The UI labels
+    exports as English (KNOWN_GAPS §14).
+    """
+    english = result.get(f"{key}_en")
+    if english:
+        return english
+    return result.get(key, default)
+
+
 def export_json_trace(job: Dict, output_dir: str) -> str:
     """Generate JSON execution trace."""
     filepath = os.path.join(output_dir, f"export_{job['job_id']}_trace.json")
     result = job.get("result") or {}
-    answer_text = result.get("final_answer", "")
-    verification_badges = list(result.get("caveats", []))
+    answer_text = _audit_text(result, "final_answer", "")
+    verification_badges = list(_audit_text(result, "caveats", []) or [])
     
     # Add fallback badges if any evidence is from a fallback model
     for ev in job.get("evidence_objects", []):
@@ -119,7 +134,7 @@ def export_pdf_report(job: Dict, output_dir: str) -> str:
     result = job.get("result", {})
     if result:
         story.append(Paragraph("<b>Final Answer:</b>", styles['Heading2']))
-        ans = html.escape(str(result.get("final_answer", "No answer generated.")))
+        ans = html.escape(str(_audit_text(result, "final_answer", "No answer generated.")))
         story.append(Paragraph(ans, styles['Normal']))
         story.append(Spacer(1, 12))
         
@@ -145,7 +160,7 @@ def export_pdf_report(job: Dict, output_dir: str) -> str:
             story.append(Paragraph(f"- Threshold: {stats.get('threshold')} {html.escape(str(stats.get('threshold_unit', '')))}", styles['Normal']))
             story.append(Spacer(1, 12))
 
-        caveats = result.get("caveats") or []
+        caveats = _audit_text(result, "caveats", []) or []
         if caveats:
             story.append(Paragraph("<b>Caveats:</b>", styles['Heading3']))
             for c in caveats:

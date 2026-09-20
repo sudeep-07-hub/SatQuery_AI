@@ -1,3 +1,4 @@
+import { useT } from '../i18n/useT';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PipelineRail from '../components/PipelineRail';
@@ -17,6 +18,7 @@ function OrbitBackdrop() {
 }
 
 export default function HomePage() {
+  const t = useT();
   const [openStep, setOpenStep] = useState<number | null>(null);
 
   return (
@@ -24,27 +26,18 @@ export default function HomePage() {
       <section className="home__hero">
         <div className="home__text">
           <OrbitBackdrop />
-          <h1 className="home__headline">Ask questions of satellite imagery. Get answers tied to evidence.</h1>
-          <p className="home__lead">
-            SatQuery AI is an agentic assistant for remote-sensing images: upload one or two optical or SAR
-            images and ask a question in plain language.
-          </p>
-          <p className="home__lead">
-            The controller interprets the query, selects specialist models from a tool registry, and returns an
-            evidence-grounded response built only from what those models produced.
-          </p>
-          <p className="home__lead">
-            Each answer includes its evidence items, an auditable execution trace, and model confidence reported
-            as uncalibrated.
-          </p>
+          <h1 className="home__headline">{t('home.tagline')}</h1>
+          <p className="home__lead">{t('home.lead1')}</p>
+          <p className="home__lead">{t('home.lead2')}</p>
+          <p className="home__lead">{t('home.lead3')}</p>
           <Link to="/assistant" className="home__cta">
-            Launch Assistant
+            {t('home.launch')}
             <span className="home__cta-arrow" aria-hidden="true">→</span>
           </Link>
         </div>
 
-        <aside className="home__visual" aria-label="How a query is processed">
-          <p className="home__visual-lead">How a query runs</p>
+        <aside className="home__visual" aria-label={t('home.pipelineAria')}>
+          <p className="home__visual-lead">{t('home.pipelineTitle')}</p>
           <PipelineRail
             variant="home"
             openStep={openStep}

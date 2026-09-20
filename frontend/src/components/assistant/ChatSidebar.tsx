@@ -1,4 +1,5 @@
 import type { ChatSession } from '../../lib/chatStorage';
+import { useT } from '../../i18n/useT';
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
@@ -18,13 +19,14 @@ interface ChatSidebarProps {
 export default function ChatSidebar({
   sessions, activeId, collapsed, drawerOpen, busy, onToggleCollapsed, onCloseDrawer, onNewChat, onSelect, onDelete,
 }: ChatSidebarProps) {
+  const t = useT();
   // On narrow screens the same control dismisses the drawer instead of shrinking it to a rail.
   const isDrawer = () => window.matchMedia('(max-width: 900px)').matches;
 
   return (
     <aside
       className={`chat-sidebar ${collapsed ? 'chat-sidebar--collapsed' : ''} ${drawerOpen ? 'chat-sidebar--open' : ''}`}
-      aria-label="Chat history"
+      aria-label={t('sidebar.aria')}
     >
       <div className="chat-sidebar__header">
         {/* The SatQuery mark stays visible in both states */}
@@ -33,8 +35,8 @@ export default function ChatSidebar({
           className="chat-sidebar__toggle"
           onClick={() => (isDrawer() ? onCloseDrawer() : onToggleCollapsed())}
           aria-expanded={!collapsed}
-          aria-label={collapsed ? 'Expand chat history' : 'Collapse chat history'}
-          title={collapsed ? 'Expand chat history' : 'Collapse chat history'}
+          aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
+          title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
         >
           <span className={`json-viewer__toggle chat-sidebar__toggle-icon ${collapsed ? '' : 'json-viewer__toggle--open'}`}>▾</span>
         </button>
@@ -44,17 +46,17 @@ export default function ChatSidebar({
         className="chat-sidebar__new"
         onClick={onNewChat}
         disabled={busy}
-        title={busy ? 'Wait for the current response to finish' : 'Start a new chat'}
-        aria-label="New chat"
+        title={busy ? t('sidebar.newChatBusy') : t('sidebar.newChatTitle')}
+        aria-label={t('sidebar.newChat')}
       >
         <span aria-hidden="true">+</span>
-        {(!collapsed || drawerOpen) && <span>New Chat</span>}
+        {(!collapsed || drawerOpen) && <span>{t('sidebar.newChat')}</span>}
       </button>
 
       {(!collapsed || drawerOpen) && (
         <nav className="chat-sidebar__list">
           {sessions.length === 0 ? (
-            <div className="chat-sidebar__empty">No chats yet.</div>
+            <div className="chat-sidebar__empty">{t('sidebar.empty')}</div>
           ) : (
             sessions.map((session) => (
               <div
@@ -74,8 +76,8 @@ export default function ChatSidebar({
                   className="chat-sidebar__item-delete"
                   onClick={() => onDelete(session.id)}
                   disabled={busy && session.id === activeId}
-                  aria-label={`Delete chat "${session.title}"`}
-                  title="Delete chat"
+                  aria-label={t('sidebar.deleteChatAria', { title: session.title })}
+                  title={t('sidebar.deleteChat')}
                 >
                   ×
                 </button>

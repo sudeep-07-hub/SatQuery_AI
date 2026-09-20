@@ -1,3 +1,4 @@
+import { useT } from '../i18n/useT';
 import { useCallback, useRef, useState } from 'react';
 
 interface UploadedFile {
@@ -43,6 +44,7 @@ export function useImageAttachments(
   onFilesChange: (files: UploadedFile[]) => void,
   onError: (error: string | null) => void,
 ) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragActive, setIsDragActive] = useState(false);
 
@@ -59,7 +61,7 @@ export function useImageAttachments(
       }
 
       if (files.length + incoming.length > MAX_FILES) {
-        onError('Maximum 2 images allowed. Remove one before adding another.');
+        onError(t('upload.maxFiles', { max: MAX_FILES }));
         return;
       }
 

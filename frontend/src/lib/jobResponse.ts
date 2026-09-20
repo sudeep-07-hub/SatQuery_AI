@@ -94,6 +94,20 @@ export interface JobResponse {
   }> | null;
   failed?: { reason: string }[];
   evidence_objects: EvidenceObject[];
+  /** Language the question was asked in; "en" unless the user switched the interface language. */
+  query_language?: string;
+  /**
+   * Present only when the backend actually translated the query. Both strings are kept so a
+   * reviewer can see the exact text the pipeline reasoned over, rather than trusting that the
+   * translation was faithful.
+   */
+  input_translation?: {
+    from: string;
+    to: string;
+    engine: string;
+    original: string;
+    translated: string;
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,6 +130,8 @@ export function snapshotJob(result: Raw, progressTrace: Raw[], structuredTrace: 
     observations: r.observations ?? null,
     failed: Array.isArray(r.failed) ? r.failed : undefined,
     evidence_objects: Array.isArray(structuredTrace?.evidence_objects) ? structuredTrace.evidence_objects : [],
+    query_language: typeof r.query_language === 'string' ? r.query_language : undefined,
+    input_translation: r.input_translation ?? undefined,
   };
   const executionTrace: JobExecutionTrace = {
     // Tracebacks are server diagnostics, not user-facing: never persisted or shown

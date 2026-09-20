@@ -5,9 +5,17 @@
  * those files to the backend and runs the pipeline live — nothing here is a recorded or fabricated
  * answer. `requiresTool` lets the UI disable a sample when the connected backend cannot run it.
  */
+import type { TranslationKey } from '../i18n/types';
+
 export interface SampleQuery {
   id: string;
-  title: string;
+  titleKey: TranslationKey;
+  /**
+   * The literal string POSTed to /api/query. It stays English in Phase 2: translating it would
+   * send a non-English query into a pipeline whose planner and registry rules are English-only,
+   * which is the Phase 3 work and is separately gated. The card shows it verbatim, so what the
+   * user reads is what the pipeline receives.
+   */
   query: string;
   files: string[];
   /** Provenance of the bundled imagery, shown on the card. */
@@ -19,7 +27,7 @@ export interface SampleQuery {
 export const SAMPLE_QUERIES: SampleQuery[] = [
   {
     id: 'airstrip',
-    title: 'New airstrip in the Amazon',
+    titleKey: 'sample.airstrip.title',
     query: 'Has a new airstrip been cleared between these two acquisitions?',
     files: ['/samples/s1aad_ID32_before.tif', '/samples/s1aad_ID32_after.tif'],
     source: 'Sentinel-1 SAR pair · S1-AAD airstrip dataset',
@@ -27,7 +35,7 @@ export const SAMPLE_QUERIES: SampleQuery[] = [
   },
   {
     id: 'change',
-    title: 'What changed here?',
+    titleKey: 'sample.change.title',
     query: 'What changed between these two images?',
     files: ['/samples/s1aad_ID443_before.tif', '/samples/s1aad_ID443_after.tif'],
     source: 'Sentinel-1 SAR pair · S1-AAD airstrip dataset',
@@ -35,7 +43,7 @@ export const SAMPLE_QUERIES: SampleQuery[] = [
   },
   {
     id: 'river',
-    title: 'Ask about one image',
+    titleKey: 'sample.river.title',
     query: 'Is there a river in this image?',
     files: ['/samples/sentinel2_serbia_26_19.tif'],
     source: 'Sentinel-2 optical patch · BigEarthNet',

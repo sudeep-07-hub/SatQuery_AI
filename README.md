@@ -350,7 +350,7 @@ Tests needing a live API server skip themselves automatically when nothing is li
 | Endpoint | Purpose |
 |---|---|
 | `POST /api/validate` | MC1 validation only — check inputs before committing to a full run |
-| `POST /api/query` | Submit a query to the full pipeline; returns a `job_id` immediately |
+| `POST /api/query` | Submit a query to the full pipeline; returns a `job_id` immediately. Multipart fields: `files` (1–2 images), `query`, and the optional `query_language` |
 | `GET /api/system` | LLM backend and available engines for this deployment |
 | `GET /api/jobs/{id}/status` | Job status |
 | `GET /api/jobs/{id}/result` | Final answer |
@@ -359,6 +359,37 @@ Tests needing a live API server skip themselves automatically when nothing is li
 | `GET /api/jobs/{id}/structured_trace` | Structured step-by-step trace |
 | `GET /api/jobs/{id}/preview/{observation_id}` | PNG preview of an observation |
 | `GET /api/jobs/{id}/export/{format}` | Export as `json`, `geojson`, or `pdf` |
+
+#### `query_language` (optional)
+
+`POST /api/query` accepts `query_language`, the language `query` is written in: `en` (default),
+`hi`, `kn`, `te` or `ta`. Anything else is rejected with HTTP 400. Omitting the field behaves
+exactly as before, so existing clients are unaffected.
+
+A non-English query is translated to English by the Qwen3 instance already in the pipeline,
+**once, before MC2 sees it** (`backend/qwen/translation.py`). Everything downstream — MC2, MC3 and
+the specialist engines — reasons over the English string, and the transformation is recorded in
+the job trace and the result as `input_translation`, with both the original and the translated
+text, so a reviewer can see exactly what the pipeline reasoned over:
+
+```json
+"input_translation": {
+  "from": "kn", "to": "en", "engine": "qwen3:4b",
+  "original": "ಈ ಎರಡು ಚಿತ್ರಗಳ ನಡುವೆ ಏನು ಬದಲಾಯಿತು?",
+  "translated": "What changed between these two images?"
+}
+```
+
+The answer and its caveats are synthesised in English from verified evidence and translated as a
+final step; the English originals are kept as `final_answer_en` and `caveats_en`.
+
+**A deployment without the language model cannot serve a non-English query.** The Tool Registry
+planner matches English keywords, so running it on another language would answer a question the
+pipeline never understood. Such a job terminates as `TRANSLATION_UNAVAILABLE` with no claims and
+zero confidence, and says why. English queries on the same deployment are unaffected.
+
+The **execution trace and the exported PDF/GeoJSON/JSON stay English** — they are audit artefacts,
+and ReportLab's built-in faces carry no Indic glyphs (KNOWN_GAPS §14).
 
 ### Configuration
 

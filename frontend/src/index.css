@@ -59,12 +59,19 @@
   --focus-ring-w: 2px;
   --focus-ring-offset: 2px;
 
+  /* ── Elevation ──
+     Referenced by .trace-panel/.result-panel but never defined, so those rules were dropped as
+     invalid; both are unreferenced components. Defined here for the language popover. */
+  --shadow-sm: 0 4px 16px rgba(20, 24, 29, 0.10);
+
   /* ── Transitions ── */
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
 }
 
 [data-theme="dark"] {
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.45);
+
   /* ── Dark Mode Tokens ── */
   --canvas: #0B0F16;
   --surface: #121822;
@@ -80,6 +87,17 @@
   --warning: #E0C255;
   --error: #F0716B;
 }
+
+/* ── Script fonts ──
+   IBM Plex Sans carries no Indic glyphs, so without these four of the five languages render as
+   tofu. I18nProvider injects the stylesheet for the selected locale's script only; these rules put
+   that family in front of the existing Latin stack. --font-mono is deliberately untouched:
+   coordinates, GSD, confidence values, CRS strings and trace keys stay in IBM Plex Mono and stay
+   in Latin script whatever the interface language is. */
+html[lang="hi"] { --font-sans: 'IBM Plex Sans Devanagari', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+html[lang="kn"] { --font-sans: 'Noto Sans Kannada', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+html[lang="te"] { --font-sans: 'Noto Sans Telugu', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+html[lang="ta"] { --font-sans: 'Noto Sans Tamil', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 *,
 *::before,
@@ -1162,6 +1180,61 @@ body {
   .navbar__github-label { display: inline; }
 }
 
+
+/* ── Language switcher — a custom listbox, so it can carry the app's own tokens ── */
+.lang-switcher { position: relative; }
+.lang-switcher__trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-base);
+  color: var(--ink);
+  font: var(--text-small); font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.lang-switcher__trigger:hover { background: var(--surface-sunken); }
+.lang-switcher__caret { font-size: 10px; color: var(--ink-muted); }
+
+.lang-switcher__panel {
+  position: absolute; top: calc(100% + var(--spacing-4)); right: 0; z-index: 1001;
+  min-width: 160px; margin: 0; padding: var(--spacing-4);
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-sm);
+  animation: lang-panel-in var(--transition-fast);
+}
+.lang-switcher__option {
+  padding: 8px 10px;
+  border-left: 2px solid transparent;
+  border-radius: var(--radius-base);
+  color: var(--ink);
+  font: var(--text-small);
+  cursor: pointer;
+  /* Indic endonyms fall back to the OS script font here: see LanguageSwitcher.tsx. */
+  line-height: 1.6;
+}
+.lang-switcher__option--active { background: var(--surface-sunken); }
+.lang-switcher__option--selected { color: var(--primary); border-left-color: var(--primary); font-weight: 600; }
+
+/* Focus lives on the list; the highlighted option is tracked by aria-activedescendant. */
+.lang-switcher__trigger:focus-visible,
+.lang-switcher__panel:focus-visible {
+  outline: var(--focus-ring-w) solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@keyframes lang-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lang-switcher__panel { animation: none; }
+}
+
 /* ── Home page — existing tokens only (no new colours or font families) ── */
 .home { flex: 1; padding: var(--spacing-64) 32px; overflow-x: clip; }  /* the orbit extends past the text column */
 .home__hero {
@@ -1377,12 +1450,17 @@ body {
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
-.model-selector { display: inline-flex; align-items: center; gap: var(--spacing-8); }
-.model-selector__label { font: var(--text-small); font-weight: 600; color: var(--ink-muted); }
+/* A flex item's min-width defaults to auto, so this native <select> — which sizes itself to its
+   widest option — could not shrink and pushed the page wider than a phone viewport. Translating
+   the label made it worse, so it is fixed here rather than left as KNOWN_GAPS §8. The select
+   truncates its own option text natively; the full text stays in the control's title. */
+.model-selector { display: inline-flex; align-items: center; gap: var(--spacing-8); min-width: 0; max-width: 100%; }
+.model-selector__label { font: var(--text-small); font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
 .model-selector__select {
   font: var(--text-small); color: var(--ink);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-base);
   padding: 6px 10px;
+  min-width: 0; max-width: 100%;
 }
 
 /* Message thread */
@@ -1561,6 +1639,8 @@ body {
   .chat-sidebar--collapsed .chat-sidebar__header { flex-direction: row; }
   .chat-sidebar__list { max-height: 160px; }
   .chat-header, .chat-thread, .chat-composer { padding-left: 16px; padding-right: 16px; }
+  /* The capability pill is a whole sentence; it wraps instead of widening the page. */
+  .chat-header .pill { white-space: normal; }
   .chat-turn__bubble, .chat-turn--assistant .chat-turn__bubble { max-width: 100%; width: 100%; }
 }
 
