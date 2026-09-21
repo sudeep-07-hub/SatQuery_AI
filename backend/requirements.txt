@@ -13,3 +13,5 @@ transformers>=4.40.0
 accelerate>=0.27.0
 datasets
 pyarrow
+# Needed by mc4c/semantic_head.py (CROMA). Without it four test modules fail at import.
+configilm>=0.4.10

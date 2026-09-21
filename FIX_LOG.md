@@ -172,9 +172,13 @@ Verification (headless Chrome, CDP Network domain, per locale):
   te  lang=te  injected: [satquery-font-te]     5 requests → Noto+Sans+Telugu
   ta  lang=ta  injected: [satquery-font-ta]     5 requests → Noto+Sans+Tamil
 English loads no Indic font, and no locale loads a script it does not use. Measured payload per
-family (400+600, full subset): Devanagari 156 KB, Kannada 129 KB, Telugu 97 KB, Tamil 97 KB —
-against 197 KB for the app's existing Latin faces. Loading all four eagerly would have roughly
-tripled font weight for every visitor, including English ones.
+family (400+600, full subset): **Hindi (IBM Plex Sans Devanagari) 142 KB over 8 files, Kannada
+129 KB, Telugu 168 KB, Tamil 97 KB** — against 197 KB for the app's existing Latin faces. Loading
+all four eagerly would have roughly tripled font weight for every visitor, including English ones.
+Correction to an earlier draft of this entry, which quoted "Devanagari 156 KB … Telugu 97 KB":
+156 KB is Noto Sans Devanagari, which is not the family used for Hindi, and the Telugu figure was
+carried over from Tamil rather than measured. Re-measured at close-out; the numbers above are the
+measured ones.
 Regression check: `viewer`/`confidence` values re-checked in the Tamil screenshot — `0.97` and
 `R1`–`R5` still render in IBM Plex Mono, in Latin.
 
@@ -428,3 +432,218 @@ value.
 Latency: 304s through the UI against 92s for the same Kannada query over the API earlier — the
 difference is the per-caveat translation attempts, two of which failed and were retried before
 falling back to English.
+
+[FEATURE] [FRONTEND] Voice query input — browser-native dictation (2026-09-20)
+Scope: Phase 4. New `frontend/src/lib/speech.ts` (recogniser + state machine) and
+`frontend/src/components/assistant/MicButton.tsx`; `ChatComposer.tsx` wires them; `index.css` adds
+the listening state, the dismissible error block and `.sr-only`; 14 new keys × 5 locales. No
+backend endpoint was added — the Web Speech API runs in the browser, and a server-side Whisper
+would not fit the 512 MB hosted deployment.
+Evidence: `/Users/sukesh/Desktop/satquery-phase4-evidence/`.
+
+Placement: the mic goes into the in-field icon row reserved in Phase 1 — same
+`--composer-icon-size`, `--composer-icon-gap` and `--composer-icon-inset` as any other icon there,
+and the component sets `--composer-icon-count: 1` so the textarea's reserved trailing padding
+follows automatically. No stylesheet change was needed for the geometry, exactly as Phase 1
+predicted.
+Verified the reservation actually works with 220 characters of text:
+  reservedPaddingRight 52px | text right edge 1124 | mic left edge 1143 | textStopsBeforeMic true
+
+Phase 1 regression, re-run with the mic present:
+  40/40 rows bottom-aligned; first-line offset from the buttons' centre 0.0px at 375px and 1280px.
+
+Tab order is the order the work order asks for:
+  .chat-composer__attach → #chat-prompt → .chat-composer__icon-btn → .chat-composer__send
+
+Recognition language follows the interface language:
+  en → en-IN | hi → hi-IN | kn → kn-IN | te → te-IN | ta → ta-IN
+
+Dictation never sends. Interim results stream into the field and the final result lands editable:
+  while listening: textarea "has a new airstrip", readOnly true, aria-pressed "true",
+                   live region "Listening", ring animation "mic-ring"
+  after final:     textarea "has a new airstrip been cleared?", editable again,
+                   aria-pressed "false", **turnsAdded 0**
+The field is read-only only while the recogniser is running, because an edit made mid-phrase would
+be overwritten by the next transcript; it is editable again the moment dictation ends.
+
+Every error code gets its own instruction — no generic "something went wrong":
+  not-allowed         → Microphone access is blocked. Allow the microphone for this site…
+  no-speech           → Nothing was heard. Check that the right microphone is selected…
+  audio-capture       → No microphone was found. Connect one, then press the mic again.
+  network             → Speech recognition runs as an online service and it could not be reached…
+  aborted             → Dictation stopped before anything was recognised…
+  service-not-allowed → The browser blocked the speech service for this page…
+  weird-new-code      → Dictation stopped: weird-new-code. Press the mic to try again.
+The last line is the point of the default branch: an unrecognised code still names what the
+browser reported instead of hiding it.
+
+Honest capability reporting, both kinds:
+  no API at all (both constructors deleted before load) → mic stays visible, `disabled: true`,
+    tooltip "Voice input needs a browser with speech recognition; this one does not have it."
+  service rejects the language → mic disables for that language only, with the real reason in the
+    interface language: "ಸ್ಪೀಚ್ ಸೇವೆ ಕನ್ನಡ ಅನ್ನು ಗುರುತಿಸುವುದಿಲ್ಲ…"
+Denied permission does not re-prompt: the message persists and `start()` stayed at 1 call.
+
+Limits: a 30-second cap is scheduled on start and calls `stop()` (not `abort()`, so a final result
+still arrives) — `{"capScheduledMs":30000,"stopCalled":1}`. The cap is stated in the mic's tooltip
+before the user starts rather than arriving as a surprise cut-off.
+
+Reduced motion: `@media (prefers-reduced-motion: reduce)` replaces the pulse with a static filled
+state — `ringAnimation "none", ringOpacity "1", background rgb(252, 231, 217)` (`--primary-tint`).
+
+[BUG] [FRONTEND] Listening state was silently overridden by the shared icon-button rule (2026-09-20)
+Symptom: under `prefers-reduced-motion: reduce` the mic's filled background did not render —
+measured `backgroundColor: rgba(0, 0, 0, 0)` where `--primary-tint` was expected.
+Root cause: `.mic--listening` (index.css:1195) and `.chat-composer__icon-btn` (index.css:1643) are
+both single-class selectors, so they have equal specificity and the later one wins. The shared
+icon-button rule sets `background: none` and `color: var(--ink-muted)`, so it was quietly undoing
+the listening state — the colour and border change as well as the background.
+Fix: scope the listening rules to `.chat-composer__icon-btn.mic--listening`, which wins on
+specificity regardless of source order. **No `!important`** — the work order forbids it for
+alignment, and it would have been the wrong tool here too.
+Regression check: reduced-motion re-measured after the change →
+`{"ringAnimation":"none","ringOpacity":"1","filledBackground":"rgb(252, 231, 217)","stillIndicatesListening":true}`
+
+[CLOSE-OUT] [PHASE 5] Integration, documentation, bundle accounting (2026-09-20)
+
+Alignment, re-run in every language with the mic present — the Phase 1 matrix × 5 locales:
+  en 40/40 | hi 40/40 | kn 40/40 | te 40/40 | ta 40/40  →  **200/200 rows bottom-aligned**
+(5 languages × 5 widths × 2 themes × 4 states: empty, single line, four wrapped lines, past the
+cap). Screenshots: `satquery-phase5-evidence/matrix-<locale>/`.
+Note on the first batch run: English reported 0 rows because the first Chrome of the batch had not
+released its debugging port. Re-run on its own it gives 40/40, unchanged. A transient harness
+failure, not a layout one.
+
+Bundle, measured as bytes on disk and bytes gzipped — `0f631e9` (genuinely before this work order)
+against the current tree:
+
+  BEFORE  index-St4ykz3B.css   raw  60,101   gzip  14,853
+          index-Cya13MNm.js    raw 429,629   gzip 133,472
+  AFTER   index-B9YAy3X_.css   raw  65,373   gzip  15,783
+          index-BRssdAh3.js    raw 521,137   gzip 153,748
+
+  delta   CSS  +5,272 raw  (+930 gzip)      JS  +91,508 raw  (+20,276 gzip)
+  total   **+21,206 bytes gzipped, +14.3%** over the whole four-phase work order.
+
+Most of the JS growth is the five translation catalogs, which ship in the main chunk. Note the
+figures above are **bytes**, not vite's reported "kB": vite counts characters, and Indic text is
+three bytes per character in UTF-8, so vite under-reports this bundle by ~37 KB (484.24 kB
+reported against 521,137 bytes on disk). Bytes are what crosses the wire, so bytes are quoted.
+
+Fonts are *not* in those numbers — they load per script, on selection:
+  English  0 KB (the Latin faces are already in index.html)
+  Hindi    142 KB (IBM Plex Sans Devanagari, 8 files)
+  Kannada  129 KB (Noto Sans Kannada, 3 files)
+  Telugu   168 KB (Noto Sans Telugu, 3 files)
+  Tamil     97 KB (Noto Sans Tamil, 3 files)
+So an English visitor pays the +21 KB of catalogs and nothing else; the worst case is a Telugu
+visitor at +21 KB + 168 KB. Eagerly loading all four families would have cost every visitor 536 KB
+of font on top, which is why the provider injects one stylesheet on demand instead.
+Deferred, not done: splitting the four non-English catalogs out of the main chunk would return
+most of the +21 KB to English visitors. It needs dynamic `import()` and a loading state, and was
+out of scope for a work order that forbids new dependencies and gates each phase.
+
+Which caller gets what from the identifier policy, re-checked at close-out across the five
+languages: model and tool names, `MC1`–`MC8`, status enums, CRS strings, file formats, API fields
+and trace keys are Latin in every locale; `--font-mono` is untouched, so numbers, coordinates and
+confidence values stay in IBM Plex Mono.
+
+[UI] [FRONTEND] Language switcher did not read as a language control (2026-09-21)
+Symptom: the first person shown the Phase 2 build looked for a way to change language and did not
+find it. The trigger was the word "English ▾", which reads as a label rather than a control,
+sitting between a GitHub mark and a sun/moon icon.
+Root cause: the work order asks for the current language named in its own script and forbids
+flags and country codes. That was followed, but it left the trigger with no visual cue that it is
+a chooser at all.
+Fix: a globe glyph before the language name (`GlobeGlyph` in `LanguageSwitcher.tsx`, stroked in
+`--ink-muted`, `aria-hidden` so screen readers still hear the translated `nav.languageChoose`
+label). A globe denotes "language", not a country, so it keeps to the rule against flags.
+Verification: `{"hasGlobe":true,"ariaHidden":"true","label":"English▾","triggerWidth":97,
+"stillInsideViewport":true}` in both light and dark. Screenshots:
+`satquery-phase5-evidence/switcher-globe-{light,dark}.png`.
+Regression check: trigger grew 77 px → 97 px; still inside the viewport, and the 320 px
+no-horizontal-scroll result from Phase 2 is unaffected because the switcher sits in
+`.navbar__controls`, which already had room.
+
+[BUG] [BACKEND] Evaluation runner wrote reports to a cwd-relative path (2026-09-21)
+Closes KNOWN_GAPS §18.
+Root cause: `EvaluationRunner.__init__` defaulted `output_dir="backend/data/reports"`, correct only
+when the process starts at the repository root. The test suite runs from `backend/`, so every
+full run created a stray `backend/backend/data/reports/` that `.gitignore` did not cover.
+Fix: the default is now `None`, resolved as `Path(__file__).resolve().parents[1] / "data" /
+"reports"`. Callers that pass an explicit `output_dir` are unchanged.
+Verification: imported as `backend.evaluation.runner` it resolves to
+`/Users/sukesh/Desktop/satquery/backend/data/reports`; checked `.endswith("satquery/backend/data/reports")`
+→ True. Also fixed in passing: the new signature used `Optional` without importing it, which
+would have raised `NameError` on import — caught by importing the module for real rather than
+only parsing it.
+
+[CLEANUP] [FRONTEND] Removed seven unreferenced components (2026-09-21)
+Closes KNOWN_GAPS §12. Done on request.
+Removed: `components/results/ResultPanel.tsx`, `results/TracePanel.tsx`, `results/JobStatus.tsx`,
+`components/QueryBox.tsx`, `ProfilePanel.tsx`, `TestHarness.tsx`, `AnalyzeButton.tsx` — leftovers
+from the pre-chat single-page UI, holding roughly 35 untranslated strings.
+Regression check: external references re-counted immediately before deletion, 0 for all seven.
+After deletion `tsc -b` exits 0, `vite build` succeeds, and `npm run check:i18n` still reports
+"Every key is referenced from src/ / All locales have identical key sets". `--border-light` and
+the two `--shadow-sm` users were in these files; `--shadow-sm` stays defined for the language
+popover.
+
+[BUG] [ENV] The test count was not reproducible because two interpreters were in play (2026-09-21)
+Corrects KNOWN_GAPS §17, whose first diagnosis was wrong.
+Earlier finding, as recorded then: four CROMA modules fail at import with `No module named
+'configilm'`, so "add configilm to requirements.txt". Checking before editing showed `configilm`
+**is installed** — for a different interpreter:
+  /opt/homebrew/bin/python3   v3.14.6   configilm: YES
+  /usr/bin/python3            v3.9.6    configilm: no
+The earlier suite runs had resolved `python3` to 3.9; an interactive shell resolves it to 3.14.
+So the missing-module failures were a property of which interpreter ran, not of the checkout.
+Fix: `configilm>=0.4.10` added to `backend/requirements.txt` so a clean checkout can install it —
+it genuinely is a dependency of `mc4c/semantic_head.py`. Deliberately **not** added to
+`requirements-render.txt`: CROMA is disabled on the 512 MB Render deployment via
+`SATQUERY_DISABLED_TOOLS`, so it would be weight for a tool that never runs there.
+Still open under §17: pinning the interpreter (a venv documented in the README, or pytest
+configuration), so "the suite" means one thing.
+
+[FINDING] [ENV] Full suite under Python 3.14 is OOM-killed on this machine (2026-09-21)
+Run: `/opt/homebrew/bin/python3 -m pytest -q --continue-on-collection-errors`, output captured
+straight to `satquery-phase5-evidence/pytest-py314.txt` (an earlier attempt piped through `tail`
+lost the summary line when the process died).
+  collected under 3.14: 756, collection errors: 0      (3.9: 4 collection errors)
+  process exit: 137 (SIGKILL) after 723 of 756 results
+  of those 723:  677 passed | 8 failed | 37 skipped | 0 errors
+The 8 failures are all BigEarthNet-dataset tests — `test_task5_6_features.py` ×6,
+`test_task5_7_text.py::test_caption_selection_and_join`,
+`test_task5_8r_readiness.py::test_real_bigearthnet_visual_features` — the same data dependency
+seen under 3.9, and not caused by this work.
+Cause of the kill: the last test to complete was
+`test_task7_2_croma.py::…::test_19_non_croma_regression`; the next file,
+`test_task7_3_qwen3.py`, constructs `Qwen3Inference()` (transformers, ~8 GB bf16) while CROMA's
+weights and Ollama's resident Qwen3 are already in memory, on a 16 GB machine. This is the same
+failure mode that froze the machine outright earlier in this work.
+Not re-run: the remaining 33 heavy tests were deliberately **not** retried unattended, because the
+last time this machine ran out of memory it hung and needed a restart.
+
+[VERIFICATION] [ENV] Full suite completed under Python 3.14 (2026-09-21)
+The 34 tests the OOM kill had prevented from running were re-run one file per process under a
+memory watchdog (`satquery-phase5-evidence/heavy-tests/run-heavy.sh`: kills the test if
+system-wide free memory falls below 12%, and logs it). Ollama's resident Qwen3 was unloaded and the
+dev server stopped first.
+  test_task7_3_qwen3                     12 passed           min free 14%
+  test_task7_4_paligemma                 KILLED BY WATCHDOG  min free 10%
+  test_task7_5_full_system                7 passed           min free 86%
+  test_task7_5r_multitool                 2 passed           min free 87%
+  test_task8_2_2_qwen3_live_controller    2 passed           min free 86%
+  test_task8_2_2r_qwen3_memory_safety     2 passed           min free 87%
+  test_task8_4_evaluation                 3 passed           min free 87%
+The watchdog did its job: PaliGemma pushed free memory to 10% and was killed; free memory then
+dipped to 5% while the OS reclaimed it, and recovered to 87% within seconds. The runner was paused
+before the next file in case it was also heavy — it was not (`full_system` runs on fixtures and had
+already completed), so the remaining four were resumed without PaliGemma.
+
+Combined with the first run's 722 non-heavy tests (677 passed, 8 failed, 37 skipped):
+  **756 collected | 705 passed | 8 failed | 37 skipped | 6 not run**   (705+8+37+6 = 756)
+versus Python 3.9: 696 passed, 11 failed, 37 skipped, 4 collection errors.
+
+What 739 is: 756 − 17 new Phase 3 tests = 739, the suite's collected count before this work. The
+work order's "≥739 green" treated it as a pass count; it never was one on this machine.

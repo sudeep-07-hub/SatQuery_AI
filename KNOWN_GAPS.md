@@ -49,11 +49,11 @@
 - Assistant turns are persisted to `localStorage` as text. Client-generated messages (backend unreachable, job missing, analysis failed) are written in the language that was active at the time, so a language switch leaves older turns in the previous language. Live interface chrome retranslates correctly.
 - **Required fix**: persist a translation key plus parameters instead of rendered text, and translate at render time — a `chatStorage` schema change with a migration for stored sessions.
 
-## 12. Seven Unreferenced Components — OPEN
+## 12. Seven Unreferenced Components — RESOLVED
 - `ResultPanel`, `TracePanel`, `QueryBox`, `ProfilePanel`, `TestHarness`, `AnalyzeButton` and `JobStatus` are imported by nothing (only their own definitions reference their names). They are leftovers from the pre-chat single-page UI.
 - They were deliberately **not** translated in Phase 2 — roughly 35 strings × 5 languages of dead weight — and they still contain hardcoded English.
 - They also reference two CSS custom properties that were never defined, `--border-light` and `--shadow-sm`, so those declarations have always been dropped as invalid. `--shadow-sm` is now defined (the language popover is its first live user); `--border-light` is still undefined.
-- **Required fix**: delete them, or bring them back into the app and finish translating them. Deleting files was outside the multilingual work order's scope.
+- **RESOLVED 2026-09-21**: deleted, on request — `ResultPanel.tsx`, `TracePanel.tsx`, `JobStatus.tsx`, `QueryBox.tsx`, `ProfilePanel.tsx`, `TestHarness.tsx`, `AnalyzeButton.tsx`. Re-verified as having zero external references immediately before removal; `tsc -b` and `vite build` both clean afterwards, and locale parity still reports every key referenced. `--border-light` is no longer referenced by anything and can be dropped from any future stylesheet clean-up.
 
 ## 13. Execution Trace Stays English — OPEN (by design)
 - The execution trace is an audit artefact and is not translated: stage names, tool ids, planner fields, verification keys and the backend's own stage messages stay English in every interface language. The UI says so with a translated note at the end of the trace.
@@ -79,13 +79,51 @@
 - **Consequences to expect**: a mix of languages within one answer's caveat list, and extra latency (a non-English job makes 1 + 1 + N model calls, where N is the number of caveats).
 - **Required fix**: native-speaker review of real translated answers, and a check that hedging survives; or a fidelity check comparing the translated answer back against the English; or a larger/instruction-tuned translation model, which would mean a new dependency.
 
-## 17. CROMA Test Modules Cannot Be Collected In This Environment — OPEN
-- `tests/test_mc4c_engine.py`, `test_mc4c_fallback.py`, `test_mc4c_semantic_head.py` and `test_task7_2_croma.py` fail at import with `ModuleNotFoundError: No module named 'configilm'`. `mc4c/semantic_head.py` imports it, but it is in neither `requirements.txt` nor `requirements-render.txt`.
-- Pre-existing and unrelated to the multilingual work; it means a plain `pytest` run aborts on collection unless `--continue-on-collection-errors` is passed, and the full suite count cannot be reproduced on a clean checkout.
-- **Required fix**: add `configilm` to `requirements.txt`, or guard the import in `mc4c/semantic_head.py` the way the other optional engines are guarded.
+## 17. The Test Suite Result Depends On Which `python3` Runs It — OPEN
+- This machine has at least four `python3` interpreters on `PATH`. Two matter:
 
-## 18. Evaluation Runner Writes To A Repo-Root-Relative Path — OPEN
+  | interpreter | version | `configilm` |
+  |---|---|---|
+  | `/opt/homebrew/bin/python3` | 3.14.6 | **installed** |
+  | `/usr/bin/python3` | 3.9.6 | missing |
+
+- Run under 3.9, four CROMA modules (`test_mc4c_engine.py`, `test_mc4c_fallback.py`, `test_mc4c_semantic_head.py`, `test_task7_2_croma.py`) abort at import with `ModuleNotFoundError: No module named 'configilm'`, and a plain `pytest` stops on collection unless `--continue-on-collection-errors` is passed. Under 3.14 that import succeeds.
+- **This is why the suite count was not reproducible.** An earlier revision of this entry said `configilm` was simply absent and should be added to `requirements.txt`; that diagnosis was wrong — it is installed, just not for the interpreter the tests happened to run under. `configilm` is still absent from both requirements files, so a clean checkout has no way to know it is needed.
+- **Measured under each interpreter** (2026-09-21):
+
+  | | 3.9 (`/usr/bin`) | 3.14 (Homebrew) |
+  |---|---|---|
+  | collected | 752 + **4 collection errors** | **756, 0 errors** |
+  | passed | 696 | 677 of the first 723 |
+  | failed | 11 | 8 |
+  | skipped | 37 | 37 |
+  | completed? | yes | **no — SIGKILL (exit 137) at 723/756** |
+
+- **Under 3.14 the full suite does not finish on this 16 GB machine.** With CROMA's modules now importable they actually run and load their weights; the very next file, `test_task7_3_qwen3.py`, constructs `Qwen3Inference()` — the transformers path, ~8 GB in bf16 per the README — while Ollama is already holding Qwen3 resident. The kernel killed the process. The 33 tests after that point (Qwen3 ×12, PaliGemma ×6, full-system ×7, and four more files) have not been run under 3.14.
+- **Final count, Python 3.14** (2026-09-21), heavy files re-run one per process under a memory watchdog: **756 collected, 705 passed, 8 failed, 37 skipped, 6 not run**. The 8 failures are the BigEarthNet-dataset tests; the 6 not run are `test_task7_4_paligemma.py`, killed by the watchdog at 10% free memory — PaliGemma cannot load safely beside everything else on this 16 GB machine.
+- **What "739" actually is.** 756 collected − the 17 tests added in Phase 3 = **739 exactly**. It is the suite's *collected* count before the multilingual work, not a count of passing tests: the dataset failures and skips predate this work. The work order's "must not reduce that count" is met (739 → 756); its "≥739 green" was never true on this machine even before any change. The README's `TESTS-739` badge reads as a pass count and is now also out of date.
+- **The work order's "≥739 green" is not reachable here under either interpreter.** 756 collected − 37 skipped − 8 BigEarthNet failures = at most 711 passes even if every remaining heavy test passed. The 8 failures need the BigEarthNet feature cache, which is gitignored and was not downloaded.
+- `configilm>=0.4.10` is now in `requirements.txt` (it is a genuine dependency of `mc4c/semantic_head.py`).
+- **Required fix**: pin one interpreter (a venv documented in the README); run the real-model test files in isolation, or mark them so a default run does not load two multi-GB models in one process; fetch the BigEarthNet feature cache if those eight tests are meant to pass.
+
+## 18. Evaluation Runner Writes To A Repo-Root-Relative Path — RESOLVED
 - `backend/evaluation/runner.py:11` defaults `output_dir="backend/data/reports"`. That resolves correctly when the process starts at the repository root, but the test suite runs from `backend/`, so a full `pytest` run creates a stray **`backend/backend/data/reports/`** holding `eval_rsvqa_fixture.json`, `eval_vrsbench_fixture.json` and `eval_cdvqa_fixture.json`.
 - The stray directory is not covered by `.gitignore`, so it would be committed by a `git add -A` after running the tests.
 - Pre-existing and unrelated to the multilingual work; found while running the suite for the Phase 3 gate, and deleted rather than committed.
-- **Required fix**: resolve the path relative to the module (`Path(__file__).resolve().parents[1] / "data" / "reports"`) instead of the current working directory.
+- **RESOLVED 2026-09-21**: `EvaluationRunner.__init__` now defaults `output_dir` to `None` and resolves it as `Path(__file__).resolve().parents[1] / "data" / "reports"`, which is independent of the working directory. Verified to resolve to `/Users/sukesh/Desktop/satquery/backend/data/reports` when imported as `backend.evaluation.runner`. The original entry is kept as the record of what was found.
+
+## 19. Voice Input Sends Audio To Google — OPEN (disclosure)
+- Dictation uses the browser-native Web Speech API. In Chrome that is not on-device: the audio is streamed to Google's speech service and returns a transcript. Nothing goes to the SatQuery backend, and no audio is stored by this app, but a user dictating a question is sending their voice to a third party.
+- There is deliberately no server-side transcription: the hosted demo runs on 512 MB and could not load Whisper, so claiming local speech would be false.
+- **Required fix**: say so in the UI at the point of use, so the choice is informed — a line in the mic tooltip or a first-use note. Not added yet because it is user-facing copy that needs your wording and translation into all five languages.
+
+## 20. Speech-Recognition Language Coverage Is Unverified — OPEN
+- The mic is bound to `en-IN`, `hi-IN`, `kn-IN`, `te-IN`, `ta-IN`, one per interface language. **Which of these the speech service actually accepts has not been confirmed with real speech** — the Web Speech API exposes no list of supported languages, so the only way to find out is to speak and see.
+- Handled honestly rather than guessed: if the service returns `language-not-supported`, that language is remembered and the mic disables itself for it with the real reason shown in its tooltip. Verified by simulating the error — a Kannada session correctly disabled the mic and displayed "ಸ್ಪೀಚ್ ಸೇವೆ ಕನ್ನಡ ಅನ್ನು ಗುರುತಿಸುವುದಿಲ್ಲ…".
+- Expect Kannada and Telugu to be weaker than Hindi and Tamil.
+- **Required fix**: speak into each language once on the target browser and record which work; then, if a language is permanently unsupported, disable it up front rather than on first failure.
+
+## 21. Dictation Has Not Been Tested With A Real Voice — OPEN
+- Every path below was driven programmatically with a stubbed recogniser: state machine, interim streaming, final commit, all seven error codes, the 30-second cap, permission denial, tab order and alignment. **No real speech has been through it**, because the agent that built it has no microphone.
+- What that leaves unproven: transcription accuracy, whether interim results arrive at a usable rate, whether the 30-second cap is long enough for a real question, and whether the auto-stop-on-silence behaviour of the browser feels right.
+- **Required fix**: a person speaks a question into each language on the target browser, checks the transcript lands editable in the field, and confirms nothing is sent until Send is pressed.

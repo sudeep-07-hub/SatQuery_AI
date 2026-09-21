@@ -50,7 +50,15 @@ Registry rules take over and the trace records that the LLM did not run
 
 **Conflict Verification** — MC6 checks the evidence graph before anything reaches the answer
 
-**Standards-Friendly Export** — JSON trace, GeoJSON regions, or a PDF report
+**Standards-Friendly Export** — JSON trace, GeoJSON regions, or a PDF report (written in English; see below)
+
+**Multilingual Interface** — English, हिन्दी, ಕನ್ನಡ, తెలుగు and தமிழ், with the script's font loaded
+only when that language is chosen. Ask in any of them: the query is translated to English before
+the pipeline plans anything, and the trace shows both the question as asked and the English the
+pipeline actually reasoned over
+
+**Voice Input** — dictate a question with the browser's own speech recognition; the transcript
+lands editable in the composer and nothing is sent until you press Send
 
 <br>
 
@@ -390,6 +398,35 @@ zero confidence, and says why. English queries on the same deployment are unaffe
 
 The **execution trace and the exported PDF/GeoJSON/JSON stay English** — they are audit artefacts,
 and ReportLab's built-in faces carry no Indic glyphs (KNOWN_GAPS §14).
+
+#### Interface languages and voice input
+
+The interface is available in **English, Hindi, Kannada, Telugu and Tamil**. The switcher is in the
+header; the choice is remembered in `localStorage` and the matching script font is fetched only
+when that language is selected, so an English visitor downloads no Indic font. Identifiers stay in
+Latin script in every language — `MC1`–`MC8`, tool and model names (PaliGemma, ChangeMamba, CROMA,
+Qwen3), status enums such as `ABSTAIN`, CRS strings, file formats, API fields and execution-trace
+keys — because those are the auditable values.
+
+What is **not** translated, deliberately:
+
+| | Language | Why |
+|---|---|---|
+| Execution trace | English | It is the audit artefact. When a query was translated, its first section shows the original *and* the English the pipeline reasoned over. |
+| PDF / GeoJSON / JSON exports | English | ReportLab's built-in faces carry no Indic glyphs, so an Indic PDF would be empty boxes. The result reports `exports_language: "en"` (KNOWN_GAPS §14). |
+| Answer caveats, sometimes | falls back to English | Qwen3-4B does not translate every passage reliably. Measured on one real job: Hindi 2/2, Telugu 2/2, Tamil 1/2, **Kannada 0/2**. A passage it cannot translate is left in English rather than replaced with something plausible and wrong (KNOWN_GAPS §16). |
+
+**Voice input** uses the browser-native Web Speech API. In Chrome that is not on-device — audio is
+streamed to Google's speech service and a transcript comes back. Nothing reaches the SatQuery
+backend, and no audio is stored, but it is a third party (KNOWN_GAPS §19). Where the API is absent
+(Firefox, some Safari builds) the mic is visible but disabled, with the reason in its tooltip.
+
+Recognition is bound to `en-IN`, `hi-IN`, `kn-IN`, `te-IN` and `ta-IN`, one per interface language.
+**Which of these the speech service actually accepts has not been confirmed with real speech** —
+the Web Speech API publishes no list of supported languages, so the only way to find out is to
+speak. Expect Kannada and Telugu to be weaker than Hindi and Tamil. If the service rejects a
+language, the mic disables itself for that language only and shows the real reason rather than
+failing silently (KNOWN_GAPS §20, §21).
 
 ### Configuration
 

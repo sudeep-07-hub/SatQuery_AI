@@ -1,14 +1,20 @@
+from pathlib import Path
 import json
 import os
 import asyncio
-from typing import Dict, Any
+from typing import Any, Dict, Optional
 
 from .registry import get_adapter
 from .schemas import BenchmarkPrediction, EvaluationResult
 from backend.job_manager import job_registry, execute_agentic_pipeline
 
 class EvaluationRunner:
-    def __init__(self, benchmark_name: str, data_path: str, execution_mode: str = "fixture", output_dir: str = "backend/data/reports"):
+    def __init__(self, benchmark_name: str, data_path: str, execution_mode: str = "fixture", output_dir: Optional[str] = None):
+        # Resolved against this file, not the process's cwd: the default used to be the
+        # repo-root-relative "backend/data/reports", so running the tests from backend/ created a
+        # stray backend/backend/data/reports/ that was not gitignored (KNOWN_GAPS §18).
+        if output_dir is None:
+            output_dir = str(Path(__file__).resolve().parents[1] / "data" / "reports")
         self.benchmark_name = benchmark_name
         self.data_path = data_path
         self.execution_mode = execution_mode

@@ -1,9 +1,12 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { formatSize, useImageAttachments, type UploadedFile } from '../UploadZone';
 import { attachmentLabel } from './ChatThread';
-import { useT } from '../../i18n/useT';
+import { useI18n } from '../../i18n/useT';
 import type { Translate } from '../../i18n/I18nProvider';
+import { LOCALE_ENDONYM } from '../../i18n/types';
+import { MAX_DICTATION_SECONDS, useSpeechRecognition } from '../../lib/speech';
+import MicButton from './MicButton';
 
 interface ChatComposerProps {
   files: UploadedFile[];
@@ -40,6 +43,20 @@ function AttachmentChip({ t, file, index, count, disabled, onRemove }: {
   );
 }
 
+/** One plain-language recovery instruction per error code; no generic "something went wrong". */
+function micErrorMessage(t: Translate, code: string): string {
+  switch (code) {
+    case 'not-allowed': return t('mic.error.notAllowed');
+    case 'service-not-allowed': return t('mic.error.serviceNotAllowed');
+    case 'no-speech': return t('mic.error.noSpeech');
+    case 'audio-capture': return t('mic.error.audioCapture');
+    case 'network': return t('mic.error.network');
+    case 'aborted': return t('mic.error.aborted');
+    // Unknown codes still name what the browser reported rather than hiding it.
+    default: return t('mic.error.other', { code });
+  }
+}
+
 export default function ChatComposer({
   files, onFilesChange, prompt, onPromptChange, onSend, inFlight, error, onError,
 }: ChatComposerProps) {
@@ -48,8 +65,25 @@ export default function ChatComposer({
     acceptAttribute, maxFiles,
   } = useImageAttachments(files, onFilesChange, onError);
 
-  const t = useT();
+  const { t, locale } = useI18n();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Live partial transcript. Kept out of `prompt` so a half-heard phrase is never what gets sent;
+  // only final results are committed, and the user still presses Send.
+  const [interim, setInterim] = useState('');
+  const promptRef = useRef(prompt);
+  promptRef.current = prompt;
+
+  const commitTranscript = useCallback((text: string) => {
+    const spoken = text.trim();
+    if (!spoken) return;
+    const existing = promptRef.current;
+    const next = existing ? `${existing.replace(/\s+$/, '')} ${spoken}` : spoken;
+    setInterim('');
+    onPromptChange(next);
+  }, [onPromptChange]);
+
+  const speech = useSpeechRecognition(locale, commitTranscript, setInterim);
 
   /**
    * Auto-grow: one control-height at a single line, growing with the content up to
@@ -148,14 +182,27 @@ export default function ChatComposer({
             id="chat-prompt"
             className="chat-composer__input"
             placeholder={files.length === 0 ? t('composer.placeholder') : t('composer.placeholderWithFiles')}
-            value={prompt}
+            value={interim ? `${prompt ? `${prompt.replace(/\s+$/, '')} ` : ''}${interim}` : prompt}
             onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={onKeyDown}
+            readOnly={speech.state === 'listening' || speech.state === 'requesting-permission'}
             rows={1}
             maxLength={500}
           />
-          {/* The in-field icon row renders only when it holds an icon; the count it carries is
-              what reserves the textarea's trailing padding. The mic joins it in Phase 4. */}
+          {/* The in-field icon row. --composer-icon-count reserves the textarea's trailing
+              padding, so dictated text never runs underneath the mic. */}
+          <div className="chat-composer__icons" style={{ '--composer-icon-count': 1 } as React.CSSProperties}>
+            <MicButton
+              supported={speech.supported}
+              languageUnsupported={speech.languageUnsupported}
+              languageName={LOCALE_ENDONYM[locale]}
+              state={speech.state}
+              busy={inFlight}
+              maxSeconds={MAX_DICTATION_SECONDS}
+              onStart={speech.start}
+              onStop={speech.stop}
+            />
+          </div>
         </div>
         <button className="chat-composer__send" onClick={onSend} disabled={!canSend}>
           {inFlight ? (<><span className="chat-spinner" aria-hidden="true" /> {t('composer.analyzing')}</>) : t('composer.send')}
@@ -166,6 +213,17 @@ export default function ChatComposer({
         <div className="error-msg" role="alert">
           <span className="error-msg__icon">⚠️</span>
           {error}
+        </div>
+      )}
+
+      {/* Persistent, and never re-prompts: a denied microphone needs a settings change, so
+          clicking the mic again would only produce the same refusal. */}
+      {speech.errorCode && (
+        <div className="error-msg error-msg--mic" role="alert">
+          <span className="error-msg__icon">⚠️</span>
+          {micErrorMessage(t, speech.errorCode)}
+          <button type="button" className="error-msg__dismiss" onClick={speech.dismissError}
+                  aria-label={t('mic.dismissError')}>×</button>
         </div>
       )}
     </div>

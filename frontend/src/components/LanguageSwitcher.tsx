@@ -13,6 +13,22 @@ import type { LocaleCode } from '../i18n/types';
  * draw this menu would defeat the per-script loading the provider does, and would mean an English
  * visitor downloading fonts they never see text in.
  */
+/**
+ * A globe, not a flag. The language name alone reads as a label rather than a control — the first
+ * person shown this build looked for a language option and did not find it — so the icon is there
+ * to say "this is a chooser", while the name in its own script still says which language.
+ */
+function GlobeGlyph() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"
+         fill="none" stroke="currentColor" strokeWidth="1.2">
+      <circle cx="8" cy="8" r="6.2" />
+      <ellipse cx="8" cy="8" rx="2.6" ry="6.2" />
+      <path d="M1.9 6h12.2M1.9 10h12.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function LanguageSwitcher() {
   const { locale, setLocale, t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -113,6 +129,7 @@ export default function LanguageSwitcher() {
         onClick={() => (open ? close(false) : openAt(LOCALE_CODES.indexOf(locale)))}
         onKeyDown={onTriggerKeyDown}
       >
+        <GlobeGlyph />
         <span className="lang-switcher__current">{LOCALE_ENDONYM[locale]}</span>
         <span className="lang-switcher__caret" aria-hidden="true">▾</span>
       </button>
