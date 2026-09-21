@@ -4,12 +4,12 @@
 
 ### Agentic Assistant for Satellite Imagery
 
-*Ask in plain English. Get an answer you can audit, all the way down to the pixels.*
+*Ask in plain language. Get an answer you can audit, all the way down to the pixels.*
 
 [![LIVE DEMO](https://img.shields.io/badge/🌐_LIVE-DEMO-F2600C?style=for-the-badge)](https://sat-query-ai-mu.vercel.app/)
 [![PIPELINE](https://img.shields.io/badge/🧩_PIPELINE-MC1→MC8-blue?style=for-the-badge)](#system-architecture)
 [![LLM](https://img.shields.io/badge/🧠_PLANNER-QWEN3--4B-purple?style=for-the-badge)](https://ollama.com/library/qwen3)
-[![TESTS](https://img.shields.io/badge/✅_TESTS-739-green?style=for-the-badge)](#tests)
+[![TESTS](https://img.shields.io/badge/✅_TESTS-756-green?style=for-the-badge)](#tests)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## Project Overview
 
-**SatQuery AI** turns a plain-English question about satellite imagery into an evidence-backed
+**SatQuery AI** turns a plain-language question about satellite imagery into an evidence-backed
 answer. Upload one or two scenes — optical or SAR — ask something like *"Has a new airstrip been
 cleared between these two acquisitions?"*, and the system decides which analysis engines can
 answer it, runs them, normalises their outputs into an evidence graph, verifies that graph for
@@ -343,11 +343,27 @@ registry rules.
 
 ```bash
 cd backend
-python3 -m pytest        # 739 tests
+python3 -m pytest        # 756 tests
 ```
 
 Tests needing a live API server skip themselves automatically when nothing is listening on
 `localhost:8000`.
+
+**Run them with the interpreter your dependencies are installed for.** On a machine with more than
+one `python3`, the result depends on which one runs — under an interpreter without `configilm`,
+four CROMA modules fail to import and collection stops (KNOWN_GAPS §17).
+
+Eight tests need the BigEarthNet feature cache, which is not in the repository, and fail without
+it. Measured on a 16 GB Mac, Python 3.14: **705 passed, 8 failed (the dataset tests), 37 skipped.**
+
+A few files load full model weights — Qwen3 through transformers is about 8 GB, PaliGemma several
+more. On 16 GB of RAM a single `pytest` process holding both runs out of memory, so run the heavy
+files on their own:
+
+```bash
+python3 -m pytest tests/test_task7_3_qwen3.py
+python3 -m pytest tests/test_task7_4_paligemma.py    # needs the most headroom; close other apps
+```
 
 <br>
 
